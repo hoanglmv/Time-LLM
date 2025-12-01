@@ -1,3 +1,4 @@
+# Chạy mô hình trên bộ dữ liệu M4 - một benchmark phổ biến cho dự báo chuỗi thời gian.
 import argparse
 import torch
 from accelerate import Accelerator, DeepSpeedPlugin

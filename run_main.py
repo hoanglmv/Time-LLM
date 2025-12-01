@@ -1,3 +1,4 @@
+# File chính để chạy quá trình huấn luyện và đánh giá mô hình Time-LLM cho các tác vụ dự báo chuỗi thời gian.
 import argparse
 import torch
 from accelerate import Accelerator, DeepSpeedPlugin
@@ -41,14 +42,14 @@ parser.add_argument('--data', type=str, required=True, default='ETTm1', help='da
 parser.add_argument('--root_path', type=str, default='./dataset', help='root path of the data file')
 parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
 parser.add_argument('--features', type=str, default='M',
-                    help='forecasting task, options:[M, S, MS]; '
-                         'M:multivariate predict multivariate, S: univariate predict univariate, '
+                    help='forecasting task, options:[M, S, MS]; ' 
+                         'M:multivariate predict multivariate, S: univariate predict univariate, ' 
                          'MS:multivariate predict univariate')
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
 parser.add_argument('--loader', type=str, default='modal', help='dataset type')
 parser.add_argument('--freq', type=str, default='h',
-                    help='freq for time features encoding, '
-                         'options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], '
+                    help='freq for time features encoding, ' 
+                         'options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], ' 
                          'you can also use more detailed freq like 15min or 3h')
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
 
@@ -78,7 +79,7 @@ parser.add_argument('--patch_len', type=int, default=16, help='patch length')
 parser.add_argument('--stride', type=int, default=8, help='stride')
 parser.add_argument('--prompt_domain', type=int, default=0, help='')
 parser.add_argument('--llm_model', type=str, default='LLAMA', help='LLM model') # LLAMA, GPT2, BERT
-parser.add_argument('--llm_dim', type=int, default='4096', help='LLM model dimension')# LLama7b:4096; GPT2-small:768; BERT-base:768
+parser.add_argument('--llm_dim', type=str, default='4096', help='LLM model dimension')# LLama7b:4096; GPT2-small:768; BERT-base:768
 
 
 # optimization

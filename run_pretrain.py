@@ -1,3 +1,26 @@
+# Copyright 2024 The Time-LLM Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -*- coding: utf-8 -*-
+# Đây là file thực thi cho giai đoạn "tiền huấn luyện" (pre-training) của Time-LLM.
+# Mục đích của file này là huấn luyện mô hình Time-LLM trên một hoặc nhiều bộ dữ liệu
+# chuỗi thời gian lớn để học các biểu diễn (representations) chung.
+# Quá trình này giúp mô hình nắm bắt được các mẫu và đặc tính phổ quát của dữ liệu chuỗi thời gian
+# trước khi được tinh chỉnh (fine-tuning) cho các tác vụ dự báo cụ thể trên các bộ dữ liệu nhỏ hơn.
+# Về cơ bản, nó tương tự như `run_main.py` nhưng được thiết kế riêng cho việc tải và xử lý
+# các bộ dữ liệu tiền huấn luyện.
+
 import argparse
 import torch
 from accelerate import Accelerator, DeepSpeedPlugin
@@ -42,14 +65,14 @@ parser.add_argument('--root_path', type=str, default='./dataset', help='root pat
 parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
 parser.add_argument('--data_path_pretrain', type=str, default='ETTh1.csv', help='data file')
 parser.add_argument('--features', type=str, default='M',
-                    help='forecasting task, options:[M, S, MS]; '
-                         'M:multivariate predict multivariate, S: univariate predict univariate, '
+                    help='forecasting task, options:[M, S, MS]; ' 
+                         'M:multivariate predict multivariate, S: univariate predict univariate, ' 
                          'MS:multivariate predict univariate')
 parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
 parser.add_argument('--loader', type=str, default='modal', help='dataset type')
 parser.add_argument('--freq', type=str, default='h',
-                    help='freq for time features encoding, '
-                         'options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], '
+                    help='freq for time features encoding, ' 
+                         'options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], ' 
                          'you can also use more detailed freq like 15min or 3h')
 parser.add_argument('--checkpoints', type=str, default='./checkpoints/', help='location of model checkpoints')
 

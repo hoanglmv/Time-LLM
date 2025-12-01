@@ -1,3 +1,30 @@
+# Copyright 2024 The Time-LLM Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -*- coding: utf-8 -*-
+# Đây là một "factory" (nhà máy) để tạo ra các đối tượng tải dữ liệu (DataLoader).
+# Dựa trên tên của bộ dữ liệu được cung cấp trong tham số đầu vào (`args.data`),
+# file này sẽ chọn đúng lớp `Dataset` tương ứng (ví dụ: `Dataset_ETT_hour` cho 'ETTh1')
+# từ file `data_loader.py`.
+#
+# Chức năng chính:
+# 1. Ánh xạ tên bộ dữ liệu (chuỗi) tới các lớp Dataset cụ thể thông qua `data_dict`.
+# 2. Cấu hình các tham số cho DataLoader như kích thước batch (batch_size), có xáo trộn (shuffle) hay không,
+#    và số lượng tiến trình con (num_workers).
+# 3. Khởi tạo và trả về một đối tượng `Dataset` và một đối tượng `DataLoader` đã được cấu hình sẵn sàng
+#    để sử dụng trong vòng lặp huấn luyện hoặc đánh giá.
+
 from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_M4
 from torch.utils.data import DataLoader
 

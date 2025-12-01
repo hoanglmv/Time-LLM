@@ -1,3 +1,48 @@
+# Copyright 2024 The Time-LLM Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -*- coding: utf-8 -*-
+# Đây là file định nghĩa kiến trúc cốt lõi của mô hình Time-LLM.
+#
+# Kiến trúc này bao gồm các thành phần chính sau:
+# 1.  **LLM Backbone**: Tải một Mô hình Ngôn ngữ Lớn (LLM) đã được huấn luyện trước
+#     (ví dụ: LLaMA, GPT-2, BERT) từ thư viện Hugging Face. Các trọng số của LLM
+#     được giữ cố định (frozen) trong quá trình huấn luyện.
+#
+# 2.  **Patching và Embedding**: Dữ liệu chuỗi thời gian đầu vào được chia thành các "patch"
+#     (các đoạn con). Mỗi patch được nhúng (embed) vào một không gian vector thông qua
+#     lớp `PatchEmbedding` để tạo ra các token chuỗi thời gian.
+#
+# 3.  **Reprogramming Layer**: Đây là thành phần đổi mới quan trọng. Nó hoạt động như một
+#     cơ chế "cross-attention". Lớp này lấy các token chuỗi thời gian (đã qua patching) 
+#     làm "query" và các token embedding của toàn bộ từ vựng (vocabulary) của LLM làm
+#     "key" và "value". Mục đích là "tái lập trình" (reprogram) các token chuỗi thời gian
+#     thành các biểu diễn mà LLM có thể hiểu và xử lý được, ánh xạ kiến thức từ không gian
+#     ngôn ngữ sang không gian chuỗi thời gian.
+#
+# 4.  **Prompting**: Trước khi đưa vào LLM, một "prompt" (câu lệnh) dạng văn bản được tạo ra.
+#     Prompt này chứa các thông tin thống kê về chuỗi thời gian đầu vào (ví dụ: min, max,
+#     trung vị, xu hướng, độ trễ) và mô tả về bộ dữ liệu. Prompt này giúp LLM hiểu được
+#     ngữ cảnh và đặc điểm của dữ liệu.
+#
+# 5.  **Output Projection**: Đầu ra từ LLM được chiếu (project) thông qua một lớp tuyến tính
+#     (`FlattenHead`) để tạo ra dự báo cuối cùng có độ dài mong muốn (`pred_len`).
+#
+# Tóm lại, Time-LLM tận dụng sức mạnh biểu diễn của các LLM đã được huấn luyện trước bằng cách
+# "dịch" dữ liệu chuỗi thời gian thành một dạng mà LLM có thể hiểu được thông qua patching,
+# prompting và một lớp reprogramming thông minh.
+
 from math import sqrt
 
 import torch
@@ -224,7 +269,7 @@ class Model(nn.Module):
                 f"max value {max_values_str}, "
                 f"median value {median_values_str}, "
                 f"the trend of input is {'upward' if trends[b] > 0 else 'downward'}, "
-                f"top 5 lags are : {lags_values_str}<|<end_prompt>|>"
+                f"top 5 lags are : {lags_values_str}<|<end_prompt|>|>"
             )
 
             prompt.append(prompt_)

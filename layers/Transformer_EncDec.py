@@ -1,3 +1,36 @@
+# Copyright 2024 The Time-LLM Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# -*- coding: utf-8 -*-
+# File này định nghĩa các thành phần cơ bản của một kiến trúc Transformer tiêu chuẩn,
+# bao gồm các lớp Encoder và Decoder. Đây là những khối xây dựng nền tảng cho nhiều mô hình
+# dự báo chuỗi thời gian dựa trên Transformer, chẳng hạn như Autoformer.
+#
+# Các lớp chính bao gồm:
+# - EncoderLayer: Một lớp mã hóa duy nhất, chứa cơ chế tự chú ý (self-attention) và một mạng
+#   nơ-ron truyền thẳng (feed-forward network).
+# - Encoder: Một chuỗi các lớp EncoderLayer, tạo thành bộ mã hóa hoàn chỉnh.
+# - DecoderLayer: Một lớp giải mã duy nhất, chứa cơ chế tự chú ý, cơ chế chú ý chéo
+#   (cross-attention) để tương tác với đầu ra của bộ mã hóa, và một mạng nơ-ron truyền thẳng.
+# - Decoder: Một chuỗi các lớp DecoderLayer, tạo thành bộ giải mã hoàn chỉnh.
+#
+# Lưu ý: Mặc dù file này cung cấp một kiến trúc Transformer hoàn chỉnh, mô hình Time-LLM chính
+# (trong `models/TimeLLM.py`) không trực tiếp sử dụng các lớp này. Thay vào đó, Time-LLM
+# tận dụng một mô hình ngôn ngữ lớn (LLM) đã được huấn luyện trước làm bộ mã hóa-giải mã của nó.
+# Các lớp trong file này chủ yếu được sử dụng bởi các mô hình cơ sở (baseline) khác trong
+# dự án như `Autoformer.py` để so sánh hiệu suất.
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
