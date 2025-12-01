@@ -117,8 +117,8 @@ class Dataset_ETT_minute(Dataset):
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
-        else:
-            self.seq_len = size[0]
+        else: ## Else truyền vào mảng Size [seq_len, label_len, pred_len]
+            self.seq_len = size[0] 
             self.label_len = size[1]
             self.pred_len = size[2]
         # init
@@ -212,33 +212,33 @@ class Dataset_Custom(Dataset):
                  target='OT', scale=True, timeenc=0, freq='h', percent=100,
                  seasonal_patterns=None):
         if size == None:
-            self.seq_len = 24 * 4 * 4
-            self.label_len = 24 * 4
-            self.pred_len = 24 * 4
+            self.seq_len = 24 * 4 * 4 ## Độ dài đầu vào quá khứ
+            self.label_len = 24 * 4 ## Độ dài phần gối đầu
+            self.pred_len = 24 * 4 ## Độ dài dự báo tương lai
         else:
             self.seq_len = size[0]
             self.label_len = size[1]
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
-        type_map = {'train': 0, 'val': 1, 'test': 2}
+        type_map = {'train': 0, 'val': 1, 'test': 2} # Xác định train test valid
         self.set_type = type_map[flag]
 
-        self.features = features
-        self.target = target
-        self.scale = scale
-        self.timeenc = timeenc
-        self.freq = freq
-        self.percent = percent
+        self.features = features  # Chế độ đặc trưng: 'S' đơn biến, 'M' đa biến, 'MS' đa biến với mục tiêu đơn
+        self.target = target # Tên cột mục tiêu trong dữ liệu
+        self.scale = scale # Có chuẩn hóa dữ liệu hay không
+        self.timeenc = timeenc # Mã hóa thời gian: 0 - không mã hóa, 1 - mã hóa thời gian
+        self.freq = freq # Tần suất dữ liệu (ví dụ: 'h' - hàng giờ, 't' - hàng phút)
+        self.percent = percent # Phần trăm dữ liệu sử dụng cho tập huấn luyện
 
         self.root_path = root_path
         self.data_path = data_path
-        self.__read_data__()
+        self.__read_data__() ## Gọi hàm đọc dữ liệu ngay lập tưcs
 
         self.enc_in = self.data_x.shape[-1]
         self.tot_len = len(self.data_x) - self.seq_len - self.pred_len + 1
 
-    def __read_data__(self):
+    def __read_data__(self): # Gọi một lần và bắt đầu nạp dữ liệu vào RAM để xử lý => Chia data thành các phần tỉ lệ thường là 7/1/2
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path,
                                           self.data_path))
@@ -250,9 +250,11 @@ class Dataset_Custom(Dataset):
         cols.remove(self.target)
         cols.remove('date')
         df_raw = df_raw[['date'] + cols + [self.target]]
+        ## Tính toán vị trí cut 
         num_train = int(len(df_raw) * 0.7)
         num_test = int(len(df_raw) * 0.2)
         num_vali = len(df_raw) - num_train - num_test
+        ## Xác định biên giới cho từng tập
         border1s = [0, num_train - self.seq_len, len(df_raw) - num_test - self.seq_len]
         border2s = [num_train, num_train + num_vali, len(df_raw)]
         border1 = border1s[self.set_type]
@@ -290,13 +292,15 @@ class Dataset_Custom(Dataset):
         self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
 
-    def __getitem__(self, index):
-        feat_id = index // self.tot_len
-        s_begin = index % self.tot_len
-
-        s_end = s_begin + self.seq_len
-        r_begin = s_end - self.label_len
-        r_end = r_begin + self.label_len + self.pred_len
+    def __getitem__(self, index): # Hàm lấy mẫu theo cơ chế cửa sổ trượt 
+        feat_id = index // self.tot_len # Xác định biến mục tiêu trong trường hợp đa biến
+        # Xác định Input (X) 
+        s_begin = index % self.tot_len 
+        s_end = s_begin + self.seq_len 
+        # Xác định Output (Y)
+        r_begin = s_end - self.label_len # Xác định điểm bắt đầu của cửa sổ đầu ra
+        r_end = r_begin + self.label_len + self.pred_len    # Xác định điểm kết thúc của cửa sổ đầu ra
+        # Lấy dữ liệu theo các chỉ số đã xác định
         seq_x = self.data_x[s_begin:s_end, feat_id:feat_id + 1]
         seq_y = self.data_y[r_begin:r_end, feat_id:feat_id + 1]
         seq_x_mark = self.data_stamp[s_begin:s_end]

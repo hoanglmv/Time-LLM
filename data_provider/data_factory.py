@@ -36,6 +36,7 @@ data_dict = {
     'ECL': Dataset_Custom,
     'Traffic': Dataset_Custom,
     'Weather': Dataset_Custom,
+    'NetworksKPI': Dataset_Custom, # Thêm bộ dữ liệu NetworksKPI
     'm4': Dataset_M4,
 }
 
