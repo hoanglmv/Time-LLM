@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*- Factory Design Pattern for Data Loaders
 # Đây là một "factory" (nhà máy) để tạo ra các đối tượng tải dữ liệu (DataLoader).
 # Dựa trên tên của bộ dữ liệu được cung cấp trong tham số đầu vào (`args.data`),
 # file này sẽ chọn đúng lớp `Dataset` tương ứng (ví dụ: `Dataset_ETT_hour` cho 'ETTh1')
