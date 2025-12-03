@@ -1,7 +1,9 @@
 # File chính để chạy quá trình huấn luyện và đánh giá mô hình Time-LLM cho các tác vụ dự báo chuỗi thời gian.
 import argparse
 import torch
-from accelerate import Accelerator, DeepSpeedPlugin
+# --- SỬA LỖI WINDOWS: Bỏ DeepSpeedPlugin khỏi dòng import ---
+from accelerate import Accelerator 
+# ------------------------------------------------------------
 from accelerate import DistributedDataParallelKwargs
 from torch import nn, optim
 from torch.optim import lr_scheduler
@@ -101,8 +103,11 @@ parser.add_argument('--percent', type=int, default=100)
 
 args = parser.parse_args()
 ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
-deepspeed_plugin = DeepSpeedPlugin(hf_ds_config='./ds_config_zero2.json')
-accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], deepspeed_plugin=deepspeed_plugin)
+
+# --- SỬA LỖI WINDOWS: Tắt hoàn toàn DeepSpeed ---
+# deepspeed_plugin = DeepSpeedPlugin(hf_ds_config='./ds_config_zero2.json') 
+accelerator = Accelerator(kwargs_handlers=[ddp_kwargs]) 
+# -----------------------------------------------
 
 for ii in range(args.itr):
     # setting record of experiments

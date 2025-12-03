@@ -13,35 +13,6 @@
 # limitations under the License.
 
 # -*- coding: utf-8 -*-
-# Đây là file định nghĩa kiến trúc cốt lõi của mô hình Time-LLM.
-#
-# Kiến trúc này bao gồm các thành phần chính sau:
-# 1.  **LLM Backbone**: Tải một Mô hình Ngôn ngữ Lớn (LLM) đã được huấn luyện trước
-#     (ví dụ: LLaMA, GPT-2, BERT) từ thư viện Hugging Face. Các trọng số của LLM
-#     được giữ cố định (frozen) trong quá trình huấn luyện.
-#
-# 2.  **Patching và Embedding**: Dữ liệu chuỗi thời gian đầu vào được chia thành các "patch"
-#     (các đoạn con). Mỗi patch được nhúng (embed) vào một không gian vector thông qua
-#     lớp `PatchEmbedding` để tạo ra các token chuỗi thời gian.
-#
-# 3.  **Reprogramming Layer**: Đây là thành phần đổi mới quan trọng. Nó hoạt động như một
-#     cơ chế "cross-attention". Lớp này lấy các token chuỗi thời gian (đã qua patching) 
-#     làm "query" và các token embedding của toàn bộ từ vựng (vocabulary) của LLM làm
-#     "key" và "value". Mục đích là "tái lập trình" (reprogram) các token chuỗi thời gian
-#     thành các biểu diễn mà LLM có thể hiểu và xử lý được, ánh xạ kiến thức từ không gian
-#     ngôn ngữ sang không gian chuỗi thời gian.
-#
-# 4.  **Prompting**: Trước khi đưa vào LLM, một "prompt" (câu lệnh) dạng văn bản được tạo ra.
-#     Prompt này chứa các thông tin thống kê về chuỗi thời gian đầu vào (ví dụ: min, max,
-#     trung vị, xu hướng, độ trễ) và mô tả về bộ dữ liệu. Prompt này giúp LLM hiểu được
-#     ngữ cảnh và đặc điểm của dữ liệu.
-#
-# 5.  **Output Projection**: Đầu ra từ LLM được chiếu (project) thông qua một lớp tuyến tính
-#     (`FlattenHead`) để tạo ra dự báo cuối cùng có độ dài mong muốn (`pred_len`).
-#
-# Tóm lại, Time-LLM tận dụng sức mạnh biểu diễn của các LLM đã được huấn luyện trước bằng cách
-# "dịch" dữ liệu chuỗi thời gian thành một dạng mà LLM có thể hiểu được thông qua patching,
-# prompting và một lớp reprogramming thông minh.
 
 from math import sqrt
 
@@ -86,46 +57,40 @@ class Model(nn.Module):
         self.stride = configs.stride
 
         if configs.llm_model == 'LLAMA':
-            # self.llama_config = LlamaConfig.from_pretrained('/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/')
-            self.llama_config = LlamaConfig.from_pretrained('huggyllama/llama-7b')
+            print("Dang tai model LLaMA tu HuggingFace (huggyllama/llama-7b)...")
+            # --- FIX: Dung repo online on dinh ---
+            llama_repo = 'huggyllama/llama-7b'
+            
+            self.llama_config = LlamaConfig.from_pretrained(llama_repo)
             self.llama_config.num_hidden_layers = configs.llm_layers
             self.llama_config.output_attentions = True
             self.llama_config.output_hidden_states = True
+            
             try:
                 self.llm_model = LlamaModel.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
-                    'huggyllama/llama-7b',
-                    trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.llama_config,
-                    # load_in_4bit=True
-                )
-            except EnvironmentError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = LlamaModel.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
-                    'huggyllama/llama-7b',
+                    llama_repo,
                     trust_remote_code=True,
                     local_files_only=False,
                     config=self.llama_config,
-                    # load_in_4bit=True
+                    # device_map="auto", # Bo comment neu muon tu dong chia GPU
+                    # load_in_4bit=True  # Bo comment neu ban da cai bitsandbytes de tiet kiem VRAM
                 )
+            except Exception as e:
+                print(f"Loi khi tai Model LLaMA: {e}")
+                raise e
+
             try:
                 self.tokenizer = LlamaTokenizer.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
-                    'huggyllama/llama-7b',
-                    trust_remote_code=True,
-                    local_files_only=True
-                )
-            except EnvironmentError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = LlamaTokenizer.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
-                    'huggyllama/llama-7b',
+                    llama_repo,
                     trust_remote_code=True,
                     local_files_only=False
                 )
+            except Exception as e:
+                print(f"Loi khi tai Tokenizer LLaMA: {e}")
+                raise e
+
         elif configs.llm_model == 'GPT2':
+            print("Dang tai model GPT2 tu HuggingFace...")
             self.gpt2_config = GPT2Config.from_pretrained('openai-community/gpt2')
 
             self.gpt2_config.num_hidden_layers = configs.llm_layers
@@ -135,31 +100,22 @@ class Model(nn.Module):
                 self.llm_model = GPT2Model.from_pretrained(
                     'openai-community/gpt2',
                     trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.gpt2_config,
-                )
-            except EnvironmentError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = GPT2Model.from_pretrained(
-                    'openai-community/gpt2',
-                    trust_remote_code=True,
                     local_files_only=False,
                     config=self.gpt2_config,
                 )
+            except Exception as e:
+                print(f"Loi khi tai GPT2: {e}")
+                raise e
 
             try:
                 self.tokenizer = GPT2Tokenizer.from_pretrained(
                     'openai-community/gpt2',
                     trust_remote_code=True,
-                    local_files_only=True
-                )
-            except EnvironmentError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = GPT2Tokenizer.from_pretrained(
-                    'openai-community/gpt2',
-                    trust_remote_code=True,
                     local_files_only=False
                 )
+            except Exception as e:
+                 raise e
+
         elif configs.llm_model == 'BERT':
             self.bert_config = BertConfig.from_pretrained('google-bert/bert-base-uncased')
 
@@ -170,34 +126,24 @@ class Model(nn.Module):
                 self.llm_model = BertModel.from_pretrained(
                     'google-bert/bert-base-uncased',
                     trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.bert_config,
-                )
-            except EnvironmentError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = BertModel.from_pretrained(
-                    'google-bert/bert-base-uncased',
-                    trust_remote_code=True,
                     local_files_only=False,
                     config=self.bert_config,
                 )
+            except Exception as e:
+                raise e
 
             try:
                 self.tokenizer = BertTokenizer.from_pretrained(
                     'google-bert/bert-base-uncased',
                     trust_remote_code=True,
-                    local_files_only=True
-                )
-            except EnvironmentError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = BertTokenizer.from_pretrained(
-                    'google-bert/bert-base-uncased',
-                    trust_remote_code=True,
                     local_files_only=False
                 )
+            except Exception as e:
+                raise e
         else:
             raise Exception('LLM model is not defined')
 
+        # --- Fix padding token ---
         if self.tokenizer.eos_token:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         else:
