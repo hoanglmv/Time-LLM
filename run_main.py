@@ -285,6 +285,9 @@ if __name__ == '__main__':
             accelerator.print(f'✅ Kết quả dự đoán đã lưu tại: {folder_path}')
 
     accelerator.wait_for_everyone()
+
+
+    
     # TẮT TÍNH NĂNG TỰ XÓA FILE ĐỂ BẢO VỆ MODEL
     # if accelerator.is_local_main_process:
     #     path = './checkpoints'  # unique checkpoint saving path
