@@ -1,3 +1,9 @@
 dataset/
 *.pyc
 *.gz
+checkpoints/
+results/
+*.npy
+*.pycache
+dataset/
+.venv/
