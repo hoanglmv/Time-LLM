@@ -280,7 +280,7 @@ if __name__ == '__main__':
 
             accelerator.print('>>>>>>> Start Inference (Prediction) <<<<<<<')
             # Hàm vali() sẽ tự động lưu pred.npy và true.npy vào folder_path
-            vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric)
+            vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric, folder_path=folder_path)
             
             accelerator.print(f'✅ Kết quả dự đoán đã lưu tại: {folder_path}')
 

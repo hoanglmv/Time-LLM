@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import shutil
+import os
 
 from tqdm import tqdm
 
@@ -43,7 +44,7 @@ class EarlyStopping:
         self.counter = 0
         self.best_score = None
         self.early_stop = False
-        self.val_loss_min = np.inf
+        self.val_loss_min = np.inf  # Đã sửa np.Inf thành np.inf (tương thích Numpy 2.0)
         self.delta = delta
         self.save_mode = save_mode
 
@@ -78,9 +79,9 @@ class EarlyStopping:
 
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
-            torch.save(model.state_dict(), path + '/' + 'checkpoint')
+            torch.save(model.state_dict(), path + '/' + 'checkpoint.pth') # Thêm đuôi .pth cho chuẩn
         else:
-            torch.save(model.state_dict(), path + '/' + 'checkpoint')
+            torch.save(model.state_dict(), path + '/' + 'checkpoint.pth')
         self.val_loss_min = val_loss
 
 
@@ -131,12 +132,19 @@ def cal_accuracy(y_pred, y_true):
 
 
 def del_files(dir_path):
-    shutil.rmtree(dir_path)
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
 
 
-def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric):
+# --- QUAN TRỌNG: Đã thêm tham số folder_path để lưu kết quả ---
+def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric, folder_path=None):
     total_loss = []
     total_mae_loss = []
+    
+    # List để gom kết quả dự báo
+    preds = []
+    trues = []
+    
     model.eval()
     with torch.no_grad():
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
@@ -173,20 +181,38 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
             true = batch_y.detach()
 
             loss = criterion(pred, true)
-
             mae_loss = mae_metric(pred, true)
 
             total_loss.append(loss.item())
             total_mae_loss.append(mae_loss.item())
+            
+            # --- Gom dữ liệu để lưu ---
+            if folder_path is not None:
+                preds.append(pred.cpu().numpy())
+                trues.append(true.cpu().numpy())
 
     total_loss = np.average(total_loss)
     total_mae_loss = np.average(total_mae_loss)
+
+    # --- LƯU FILE KẾT QUẢ NẾU CÓ ĐƯỜNG DẪN ---
+    if folder_path is not None:
+        preds = np.concatenate(preds, axis=0)
+        trues = np.concatenate(trues, axis=0)
+        
+        # Tạo thư mục nếu chưa có
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+            
+        np.save(os.path.join(folder_path, 'pred.npy'), preds)
+        np.save(os.path.join(folder_path, 'true.npy'), trues)
+        # np.save(os.path.join(folder_path, 'metrics.npy'), np.array([total_loss, total_mae_loss]))
 
     model.train()
     return total_loss, total_mae_loss
 
 
 def test(args, accelerator, model, train_loader, vali_loader, criterion):
+    # Hàm này thường dành cho dataset M4 đặc thù, code chính của bạn dùng hàm vali để test
     x, _ = train_loader.dataset.last_insample_window()
     y = vali_loader.dataset.timeseries
     x = torch.tensor(x, dtype=torch.float32).to(accelerator.device)
