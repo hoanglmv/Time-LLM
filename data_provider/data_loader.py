@@ -35,7 +35,6 @@ class Dataset_ETT_hour(Dataset):
         self.timeenc = timeenc
         self.freq = freq
 
-        # self.percent = percent
         self.root_path = root_path
         self.data_path = data_path
         self.__read_data__()
@@ -117,8 +116,8 @@ class Dataset_ETT_minute(Dataset):
             self.seq_len = 24 * 4 * 4
             self.label_len = 24 * 4
             self.pred_len = 24 * 4
-        else: ## Else truyền vào mảng Size [seq_len, label_len, pred_len]
-            self.seq_len = size[0] 
+        else:
+            self.seq_len = size[0]
             self.label_len = size[1]
             self.pred_len = size[2]
         # init
@@ -212,51 +211,65 @@ class Dataset_Custom(Dataset):
                  target='OT', scale=True, timeenc=0, freq='h', percent=100,
                  seasonal_patterns=None):
         if size == None:
-            self.seq_len = 24 * 4 * 4 ## Độ dài đầu vào quá khứ
-            self.label_len = 24 * 4 ## Độ dài phần gối đầu
-            self.pred_len = 24 * 4 ## Độ dài dự báo tương lai
+            self.seq_len = 24 * 4 * 4
+            self.label_len = 24 * 4
+            self.pred_len = 24 * 4
         else:
             self.seq_len = size[0]
             self.label_len = size[1]
             self.pred_len = size[2]
-        # init
+        
         assert flag in ['train', 'test', 'val']
-        type_map = {'train': 0, 'val': 1, 'test': 2} # Xác định train test valid
+        type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
 
-        self.features = features  # Chế độ đặc trưng: 'S' đơn biến, 'M' đa biến, 'MS' đa biến với mục tiêu đơn
-        self.target = target # Tên cột mục tiêu trong dữ liệu
-        self.scale = scale # Có chuẩn hóa dữ liệu hay không
-        self.timeenc = timeenc # Mã hóa thời gian: 0 - không mã hóa, 1 - mã hóa thời gian
-        self.freq = freq # Tần suất dữ liệu (ví dụ: 'h' - hàng giờ, 't' - hàng phút)
-        self.percent = percent # Phần trăm dữ liệu sử dụng cho tập huấn luyện
+        self.features = features
+        self.target = target
+        self.scale = scale
+        self.timeenc = timeenc
+        self.freq = freq
+        self.percent = percent
 
         self.root_path = root_path
         self.data_path = data_path
-        self.__read_data__() ## Gọi hàm đọc dữ liệu ngay lập tưcs
+        self.__read_data__()
 
         self.enc_in = self.data_x.shape[-1]
         self.tot_len = len(self.data_x) - self.seq_len - self.pred_len + 1
 
-    def __read_data__(self): # Gọi một lần và bắt đầu nạp dữ liệu vào RAM để xử lý => Chia data thành các phần tỉ lệ thường là 7/1/2
+    def __read_data__(self):
         self.scaler = StandardScaler()
-        df_raw = pd.read_csv(os.path.join(self.root_path,
-                                          self.data_path))
+        df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
 
-        '''
-        df_raw.columns: ['date', ...(other features), target feature]
-        '''
+        # --- FIX LỖI THIẾU CỘT: Xử lý linh hoạt hơn ---
+        # 1. Đảm bảo cột target luôn có mặt
+        if self.target not in df_raw.columns:
+             # Nếu không tìm thấy target chính xác, thử tìm cột có tên gần giống hoặc lấy cột cuối cùng
+             print(f"⚠️ Cảnh báo: Không tìm thấy cột target '{self.target}'. Đang dùng cột cuối cùng làm target.")
+             self.target = df_raw.columns[-1]
+
+        # 2. Sắp xếp lại cột: Đẩy các features lên đầu, target xuống cuối, date bỏ ra
         cols = list(df_raw.columns)
-        cols.remove(self.target)
-        cols.remove('date')
+        if 'date' in cols:
+            cols.remove('date')
+        if self.target in cols:
+            cols.remove(self.target)
+        
+        # Tạo dataframe mới với thứ tự cột chuẩn: [Features..., Target]
         df_raw = df_raw[['date'] + cols + [self.target]]
-        ## Tính toán vị trí cut 
+        
+        # --- DEBUG: In ra để kiểm tra ---
+        print(f"📊 Dataset_Custom Columns: {df_raw.columns.tolist()}")
+        print(f"🔢 Shape: {df_raw.shape}")
+        # -------------------------------
+
         num_train = int(len(df_raw) * 0.7)
         num_test = int(len(df_raw) * 0.2)
         num_vali = len(df_raw) - num_train - num_test
-        ## Xác định biên giới cho từng tập
+        
         border1s = [0, num_train - self.seq_len, len(df_raw) - num_test - self.seq_len]
         border2s = [num_train, num_train + num_vali, len(df_raw)]
+        
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
@@ -264,7 +277,8 @@ class Dataset_Custom(Dataset):
             border2 = (border2 - self.seq_len) * self.percent // 100 + self.seq_len
 
         if self.features == 'M' or self.features == 'MS':
-            cols_data = df_raw.columns[1:]
+            # Lấy tất cả các cột trừ cột date (cột 0)
+            cols_data = df_raw.columns[1:] 
             df_data = df_raw[cols_data]
         elif self.features == 'S':
             df_data = df_raw[[self.target]]
@@ -278,6 +292,7 @@ class Dataset_Custom(Dataset):
 
         df_stamp = df_raw[['date']][border1:border2]
         df_stamp['date'] = pd.to_datetime(df_stamp.date)
+        
         if self.timeenc == 0:
             df_stamp['month'] = df_stamp.date.apply(lambda row: row.month, 1)
             df_stamp['day'] = df_stamp.date.apply(lambda row: row.day, 1)
@@ -292,24 +307,38 @@ class Dataset_Custom(Dataset):
         self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
 
-    def __getitem__(self, index): # Hàm lấy mẫu theo cơ chế cửa sổ trượt 
-        feat_id = index // self.tot_len # Xác định biến mục tiêu trong trường hợp đa biến
-        # Xác định Input (X) 
-        s_begin = index % self.tot_len 
-        s_end = s_begin + self.seq_len 
-        # Xác định Output (Y)
-        r_begin = s_end - self.label_len # Xác định điểm bắt đầu của cửa sổ đầu ra
-        r_end = r_begin + self.label_len + self.pred_len    # Xác định điểm kết thúc của cửa sổ đầu ra
-        # Lấy dữ liệu theo các chỉ số đã xác định
-        seq_x = self.data_x[s_begin:s_end, feat_id:feat_id + 1]
-        seq_y = self.data_y[r_begin:r_end, feat_id:feat_id + 1]
+    def __getitem__(self, index):
+        feat_id = index // self.tot_len
+        s_begin = index % self.tot_len
+        
+        s_end = s_begin + self.seq_len
+        r_begin = s_end - self.label_len
+        r_end = r_begin + self.label_len + self.pred_len
+        
+        # --- QUAN TRỌNG: Logic lấy dữ liệu đa biến ---
+        if self.features == 'M':
+            # Với chế độ M (Multivariate), ta lấy TOÀN BỘ các cột features
+            # Không dùng feat_id để slice từng cột một
+            seq_x = self.data_x[s_begin:s_end]
+            seq_y = self.data_y[r_begin:r_end]
+        else:
+            # Với chế độ S hoặc MS, ta mới slice từng cột
+            seq_x = self.data_x[s_begin:s_end, feat_id:feat_id + 1]
+            seq_y = self.data_y[r_begin:r_end, feat_id:feat_id + 1]
+            
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
 
         return seq_x, seq_y, seq_x_mark, seq_y_mark
 
     def __len__(self):
-        return (len(self.data_x) - self.seq_len - self.pred_len + 1) * self.enc_in
+        # --- FIX: Độ dài dataset ---
+        if self.features == 'M':
+            # Với đa biến, độ dài dataset = độ dài chuỗi thời gian (trừ đi cửa sổ trượt)
+            return (len(self.data_x) - self.seq_len - self.pred_len + 1)
+        else:
+            # Với đơn biến, độ dài nhân thêm số lượng feature (vì mỗi feature là 1 sample riêng)
+            return (len(self.data_x) - self.seq_len - self.pred_len + 1) * self.enc_in
 
     def inverse_transform(self, data):
         return self.scaler.inverse_transform(data)
@@ -365,7 +394,7 @@ class Dataset_M4(Dataset):
         insample[-len(insample_window):, 0] = insample_window
         insample_mask[-len(insample_window):, 0] = 1.0
         outsample_window = sampled_timeseries[
-                           cut_point - self.label_len:min(len(sampled_timeseries), cut_point + self.pred_len)]
+                                   cut_point - self.label_len:min(len(sampled_timeseries), cut_point + self.pred_len)]
         outsample[:len(outsample_window), 0] = outsample_window
         outsample_mask[:len(outsample_window), 0] = 1.0
         return insample, outsample, insample_mask, outsample_mask
@@ -390,4 +419,3 @@ class Dataset_M4(Dataset):
             insample[i, -len(ts):] = ts_last_window
             insample_mask[i, -len(ts):] = 1.0
         return insample, insample_mask
-
