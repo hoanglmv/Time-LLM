@@ -1,3 +1,24 @@
+# Copyright 2024 The Time-LLM Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import sys
+import os
+# Add the project root to sys.path for local module imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import argparse
 import torch
 from accelerate import Accelerator
@@ -73,7 +94,8 @@ parser.add_argument('--output_attention', action='store_true', help='whether to 
 parser.add_argument('--patch_len', type=int, default=16, help='patch length')
 parser.add_argument('--stride', type=int, default=8, help='stride')
 parser.add_argument('--prompt_domain', type=int, default=0, help='')
-parser.add_argument('--llm_model', type=str, default='LLAMA', help='LLM model') 
+parser.add_argument('--llm_model', type=str, default='LLAMA', help='LLM model')
+parser.add_argument('--llm_model_id', type=str, default='gpt2', help='LLM model id')
 parser.add_argument('--llm_dim', type=str, default='4096', help='LLM model dimension')
 
 # optimization
@@ -96,7 +118,7 @@ parser.add_argument('--percent', type=int, default=100)
 if __name__ == '__main__':
     args = parser.parse_args()
     ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
-    
+
     # Khởi tạo Accelerator (Bỏ qua DeepSpeed để tránh lỗi Windows)
     accelerator = Accelerator(kwargs_handlers=[ddp_kwargs])
 
@@ -132,7 +154,7 @@ if __name__ == '__main__':
 
         path = os.path.join(args.checkpoints, setting + '-' + args.model_comment)
         args.content = load_content(args)
-        
+
         if not os.path.exists(path) and accelerator.is_local_main_process:
             os.makedirs(path)
 
@@ -146,7 +168,7 @@ if __name__ == '__main__':
                 trained_parameters.append(p)
 
         model_optim = optim.Adam(trained_parameters, lr=args.learning_rate)
-        
+
         if args.lradj == 'COS':
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model_optim, T_max=20, eta_min=1e-8)
         else:
@@ -179,11 +201,11 @@ if __name__ == '__main__':
                 train_loss = []
                 model.train()
                 epoch_time = time.time()
-                
+
                 for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(train_loader)):
                     iter_count += 1
                     model_optim.zero_grad()
-                    
+
                     batch_x = batch_x.float().to(accelerator.device)
                     batch_y = batch_y.float().to(accelerator.device)
                     batch_x_mark = batch_x_mark.float().to(accelerator.device)
@@ -213,7 +235,7 @@ if __name__ == '__main__':
                         accelerator.print(f'\tspeed: {speed:.4f}s/iter; left time: {left_time:.4f}s')
                         iter_count = 0
                         time_now = time.time()
-                    
+
                     accelerator.backward(loss)
                     model_optim.step()
 
@@ -225,7 +247,7 @@ if __name__ == '__main__':
                 # Đánh giá
                 vali_results = vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric)
                 test_results = vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric)
-                
+
                 history['val_loss'].append(vali_results['loss'])
                 history['test_loss'].append(test_results['loss'])
 
@@ -247,7 +269,7 @@ if __name__ == '__main__':
                 adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=True)
 
             accelerator.print(">>>>>>> Training Finished <<<<<<<")
-            
+
             # Vẽ và lưu biểu đồ
             if accelerator.is_local_main_process:
                 fig_save_path = os.path.join('figures', setting + '-' + args.model_comment)
@@ -259,20 +281,20 @@ if __name__ == '__main__':
         # === PHẦN TESTING & PREDICTION (Chạy cho cả Train và Test mode) ===
         accelerator.print('>>>>>>> Loading Best Model for Testing <<<<<<<')
         best_model_path = path + '/' + 'checkpoint.pth'
-        
+
         if not os.path.exists(best_model_path):
             accelerator.print(f"❌ Không tìm thấy file checkpoint tại: {best_model_path}")
         else:
             # Tải model đã lưu
             unwrapped_model = accelerator.unwrap_model(model)
             unwrapped_model.load_state_dict(torch.load(best_model_path, map_location=accelerator.device))
-            
+
             folder_path = './results/' + setting + '-' + args.model_comment + '/'
             os.makedirs(folder_path, exist_ok=True)
 
             accelerator.print('>>>>>>> Start Final Evaluation <<<<<<<')
             final_results = vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric, folder_path=folder_path)
-            
+
             if args.task_name == 'classification':
                 accelerator.print(f"🎉 Final Test Results -> Loss: {final_results['loss']:.4f} | Acc: {final_results['acc']:.4f} | F1: {final_results['f1']:.4f}")
             else:
@@ -282,7 +304,7 @@ if __name__ == '__main__':
     accelerator.wait_for_everyone()
 
 
-    
+
     # TẮT TÍNH NĂNG TỰ XÓA FILE ĐỂ BẢO VỆ MODEL
     # if accelerator.is_local_main_process:
     #     path = './checkpoints'  # unique checkpoint saving path

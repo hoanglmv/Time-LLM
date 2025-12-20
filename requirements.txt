@@ -10,3 +10,4 @@ tqdm
 peft
 transformers
 sentencepiece
+reformer-pytorch

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Time-LLM"
+version = "0.1.0"
+description = "A PyTorch project for Time-LLM"
+requires-python = ">=3.8"
+dependencies = [
+    "torch",
+    "accelerate",
+    "einops",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "scikit-learn",
+    "scipy",
+    "tqdm",
+    "peft",
+    "transformers",
+    "sentencepiece",
+    "reformer-pytorch",
+]
+
+[tool.uv]
+# This section can be used for uv-specific configurations if needed in the future.

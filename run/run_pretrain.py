@@ -21,6 +21,13 @@
 # Về cơ bản, nó tương tự như `run_main.py` nhưng được thiết kế riêng cho việc tải và xử lý
 # các bộ dữ liệu tiền huấn luyện.
 
+import sys
+import os
+# Add the project root to sys.path for local module imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import argparse
 import torch
 from accelerate import Accelerator, DeepSpeedPlugin

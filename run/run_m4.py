@@ -1,4 +1,11 @@
 # Chạy mô hình trên bộ dữ liệu M4 - một benchmark phổ biến cho dự báo chuỗi thời gian.
+import sys
+import os
+# Add the project root to sys.path for local module imports
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import argparse
 import torch
 from accelerate import Accelerator, DeepSpeedPlugin
