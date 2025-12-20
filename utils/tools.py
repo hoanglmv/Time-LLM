@@ -3,9 +3,8 @@ import torch
 import matplotlib.pyplot as plt
 import shutil
 import os
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
 from tqdm import tqdm
+import torchmetrics
 
 plt.switch_backend('agg')
 
@@ -45,7 +44,7 @@ class EarlyStopping:
         self.counter = 0
         self.best_score = None
         self.early_stop = False
-        self.val_loss_min = np.inf  # Đã sửa np.Inf thành np.inf (tương thích Numpy 2.0)
+        self.val_loss_min = np.inf
         self.delta = delta
         self.save_mode = save_mode
 
@@ -80,7 +79,7 @@ class EarlyStopping:
 
         if self.accelerator is not None:
             model = self.accelerator.unwrap_model(model)
-            torch.save(model.state_dict(), path + '/' + 'checkpoint.pth') # Thêm đuôi .pth cho chuẩn
+            torch.save(model.state_dict(), path + '/' + 'checkpoint.pth')
         else:
             torch.save(model.state_dict(), path + '/' + 'checkpoint.pth')
         self.val_loss_min = val_loss
@@ -137,16 +136,18 @@ def del_files(dir_path):
         shutil.rmtree(dir_path)
 
 
-# --- QUAN TRỌNG: Đã thêm tham số folder_path để lưu kết quả ---
 def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric, folder_path=None):
     total_loss = []
     total_mae_loss = []
     
-    # Metrics for classification
-    total_acc = []
-    total_f1 = []
-    total_precision = []
-    total_recall = []
+    device = accelerator.device if accelerator is not None else 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    if args.task_name == 'classification':
+        num_classes = vali_data.num_classes
+        acc_metric = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes).to(device)
+        f1_metric = torchmetrics.F1Score(task="multiclass", num_classes=num_classes, average='macro').to(device)
+        precision_metric = torchmetrics.Precision(task="multiclass", num_classes=num_classes, average='macro').to(device)
+        recall_metric = torchmetrics.Recall(task="multiclass", num_classes=num_classes, average='macro').to(device)
 
     preds_list = []
     trues_list = []
@@ -154,43 +155,33 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
     model.eval()
     with torch.no_grad():
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader), disable=True):
-            device = accelerator.device if accelerator is not None else 'cuda' if torch.cuda.is_available() else 'cpu'
             batch_x = batch_x.float().to(device)
             batch_y = batch_y.float()
 
             batch_x_mark = batch_x_mark.float().to(device)
             batch_y_mark = batch_y_mark.float().to(device)
 
-            # decoder input
             dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
             dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(device)
             
-            # model call
             outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-            # Gather metrics if using accelerator
             if accelerator is not None:
                 outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
 
-            # Handle different tasks
             if args.task_name == 'classification':
                 pred_labels = torch.argmax(outputs, dim=1)
-                true_labels = batch_y.long().squeeze() # Remove unnecessary dimensions
+                true_labels = batch_y.long().squeeze().to(device)
                 
-                # Move to CPU for sklearn
-                pred_labels = pred_labels.cpu().numpy()
-                true_labels = true_labels.cpu().numpy()
-
-                total_acc.append(accuracy_score(true_labels, pred_labels))
-                total_f1.append(f1_score(true_labels, pred_labels, average='macro', zero_division=0))
-                total_precision.append(precision_score(true_labels, pred_labels, average='macro', zero_division=0))
-                total_recall.append(recall_score(true_labels, pred_labels, average='macro', zero_division=0))
+                acc_metric.update(pred_labels, true_labels)
+                f1_metric.update(pred_labels, true_labels)
+                precision_metric.update(pred_labels, true_labels)
+                recall_metric.update(pred_labels, true_labels)
                 
-                # Loss is still calculated on raw outputs
-                loss = criterion(outputs.cpu(), batch_y.long().squeeze().cpu())
+                loss = criterion(outputs, true_labels)
                 total_loss.append(loss.item())
 
-            else: # Forecasting tasks
+            else:
                 f_dim = -1 if args.features == 'MS' else 0
                 outputs = outputs[:, -args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -args.pred_len:, f_dim:].to(device)
@@ -210,16 +201,20 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
 
     results = {}
     if args.task_name == 'classification':
-        results['acc'] = np.average(total_acc)
-        results['f1'] = np.average(total_f1)
-        results['precision'] = np.average(total_precision)
-        results['recall'] = np.average(total_recall)
+        results['acc'] = acc_metric.compute().item()
+        results['f1'] = f1_metric.compute().item()
+        results['precision'] = precision_metric.compute().item()
+        results['recall'] = recall_metric.compute().item()
         results['loss'] = np.average(total_loss)
+        
+        acc_metric.reset()
+        f1_metric.reset()
+        precision_metric.reset()
+        recall_metric.reset()
     else:
         results['loss'] = np.average(total_loss)
         results['mae'] = np.average(total_mae_loss)
 
-    # Save prediction files if a path is provided (for forecasting)
     if folder_path is not None and args.task_name != 'classification':
         preds = np.concatenate(preds_list, axis=0)
         trues = np.concatenate(trues_list, axis=0)
@@ -232,7 +227,6 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
 
 
 def test(args, accelerator, model, train_loader, vali_loader, criterion):
-    # Hàm này thường dành cho dataset M4 đặc thù, code chính của bạn dùng hàm vali để test
     x, _ = train_loader.dataset.last_insample_window()
     y = vali_loader.dataset.timeseries
     x = torch.tensor(x, dtype=torch.float32).to(accelerator.device)

@@ -11,3 +11,4 @@ peft
 transformers
 sentencepiece
 reformer-pytorch
+torchmetrics
