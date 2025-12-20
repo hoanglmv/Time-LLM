@@ -28,7 +28,7 @@ from accelerate import DistributedDataParallelKwargs
 from torch import nn, optim
 from torch.optim import lr_scheduler
 
-from data_provider_pretrain.data_factory import data_provider
+from prepare_data.data_provider_pretrain.data_factory import data_provider
 from models import Autoformer, DLinear, TimeLLM
 
 import time

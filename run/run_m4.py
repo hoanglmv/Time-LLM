@@ -6,10 +6,10 @@ from accelerate import DistributedDataParallelKwargs
 from torch import optim
 from torch.optim import lr_scheduler
 
-from data_provider.m4 import M4Meta
+from prepare_data.data_provider.m4 import M4Meta
 from models import Autoformer, DLinear, TimeLLM
 
-from data_provider.data_factory import data_provider
+from prepare_data.data_provider.data_factory import data_provider
 import time
 import random
 import numpy as np

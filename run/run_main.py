@@ -11,7 +11,7 @@ import numpy as np
 import os
 
 from models import Autoformer, DLinear, TimeLLM
-from data_provider.data_factory import data_provider
+from prepare_data.data_provider.data_factory import data_provider
 from utils.tools import del_files, EarlyStopping, adjust_learning_rate, vali, load_content
 
 # Thiết lập môi trường

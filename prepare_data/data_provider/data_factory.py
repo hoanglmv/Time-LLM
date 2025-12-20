@@ -25,7 +25,7 @@
 # 3. Khởi tạo và trả về một đối tượng `Dataset` và một đối tượng `DataLoader` đã được cấu hình sẵn sàng
 #    để sử dụng trong vòng lặp huấn luyện hoặc đánh giá.
 
-from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_M4
+from prepare_data.data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_M4
 from torch.utils.data import DataLoader
 
 data_dict = {

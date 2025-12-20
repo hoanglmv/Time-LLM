@@ -10,7 +10,7 @@ d_ff=128
 
 comment='TimeLLM-ETTh1_ETTh2'
 
-accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run_pretrain.py \
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run/run_pretrain.py \
   --task_name long_term_forecast \
   --is_training 1 \
   --root_path ./dataset/ETT-small/ \
@@ -38,7 +38,7 @@ accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_proces
   --train_epochs 5 \
   --model_comment $comment
 
-accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run_pretrain.py \
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run/run_pretrain.py \
   --task_name long_term_forecast \
   --is_training 1 \
   --root_path ./dataset/ETT-small/ \
@@ -66,7 +66,7 @@ accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_proces
   --train_epochs 5 \
   --model_comment $comment
 
-accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run_pretrain.py \
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run/run_pretrain.py \
   --task_name long_term_forecast \
   --is_training 1 \
   --root_path ./dataset/ETT-small/ \
@@ -95,7 +95,7 @@ accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_proces
   --train_epochs 5 \
   --model_comment $comment
 
-accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run_pretrain.py \
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes $num_process --main_process_port $master_port run/run_pretrain.py \
   --task_name long_term_forecast \
   --is_training 1 \
   --root_path ./dataset/ETT-small/ \
