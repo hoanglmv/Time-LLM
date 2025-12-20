@@ -7,4 +7,3 @@ results/
 *.pycache
 dataset/
 .venv/
-/scripts/single_gpu/
