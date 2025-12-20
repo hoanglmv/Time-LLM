@@ -40,6 +40,7 @@ os.environ['CURL_CA_BUNDLE'] = ''
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
 
 from utils.tools import del_files, EarlyStopping, adjust_learning_rate, vali, load_content
+from utils.visualize import plot_loss, plot_classification_metrics
 
 parser = argparse.ArgumentParser(description='Time-LLM')
 
@@ -184,7 +185,7 @@ for ii in range(args.itr):
                                             epochs=args.train_epochs,
                                             max_lr=args.learning_rate)
 
-    criterion = nn.MSELoss()
+    criterion = nn.CrossEntropyLoss() if args.task_name == 'classification' else nn.MSELoss()
     mae_metric = nn.L1Loss()
 
     train_loader, vali_loader, test_loader, model, model_optim, scheduler = accelerator.prepare(
@@ -192,6 +193,12 @@ for ii in range(args.itr):
 
     if args.use_amp:
         scaler = torch.cuda.amp.GradScaler()
+
+    # Lịch sử để vẽ biểu đồ
+    history = {
+        'train_loss': [], 'val_loss': [], 'test_loss': [],
+        'acc': [], 'f1': [], 'precision': [], 'recall': []
+    }
 
     for epoch in range(args.train_epochs):
         iter_count = 0
@@ -215,76 +222,68 @@ for ii in range(args.itr):
                 accelerator.device)
 
             # encoder - decoder
-            if args.use_amp:
-                with torch.cuda.amp.autocast():
-                    if args.output_attention:
-                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-                    f_dim = -1 if args.features == 'MS' else 0
-                    outputs = outputs[:, -args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
-                    loss = criterion(outputs, batch_y)
-                    train_loss.append(loss.item())
+            # Tính loss
+            if args.task_name == 'classification':
+                loss = criterion(outputs, batch_y.long().squeeze())
             else:
-                if args.output_attention:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
                 f_dim = -1 if args.features == 'MS' else 0
                 outputs = outputs[:, -args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -args.pred_len:, f_dim:]
                 loss = criterion(outputs, batch_y)
-                train_loss.append(loss.item())
+            
+            train_loss.append(loss.item())
 
             if (i + 1) % 100 == 0:
                 accelerator.print(
-                    "\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
+                    f"\titers: {i + 1}, epoch: {epoch + 1} | loss: {loss.item():.7f}")
                 speed = (time.time() - time_now) / iter_count
                 left_time = speed * ((args.train_epochs - epoch) * train_steps - i)
-                accelerator.print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
+                accelerator.print(f'\tspeed: {speed:.4f}s/iter; left time: {left_time:.4f}s')
                 iter_count = 0
                 time_now = time.time()
 
-            if args.use_amp:
-                scaler.scale(loss).backward()
-                scaler.step(model_optim)
-                scaler.update()
-            else:
-                accelerator.backward(loss)
-                model_optim.step()
+            accelerator.backward(loss)
+            model_optim.step()
 
-            if args.lradj == 'TST':
-                adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=False)
-                scheduler.step()
+        # Kết thúc Epoch
+        accelerator.print(f"Epoch: {epoch + 1} cost time: {time.time() - epoch_time:.2f}s")
+        avg_train_loss = np.average(train_loss)
+        history['train_loss'].append(avg_train_loss)
 
-        accelerator.print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
-        train_loss = np.average(train_loss)
-        vali_loss, vali_mae_loss = vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric)
-        test_loss, test_mae_loss = vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric)
-        accelerator.print(
-            "Epoch: {0} | Train Loss: {1:.7f} Vali Loss: {2:.7f} Test Loss: {3:.7f} MAE Loss: {4:.7f}".format(
-                epoch + 1, train_loss, vali_loss, test_loss, test_mae_loss))
+        # Đánh giá
+        vali_results = vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric)
+        test_results = vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric)
+        
+        history['val_loss'].append(vali_results['loss'])
+        history['test_loss'].append(test_results['loss'])
+        
+        # In kết quả
+        if args.task_name == 'classification':
+            accelerator.print(f"Epoch: {epoch + 1} | Train Loss: {avg_train_loss:.4f} | Vali Loss: {vali_results['loss']:.4f} | Acc: {vali_results['acc']:.4f} | F1: {vali_results['f1']:.4f}")
+            history['acc'].append(vali_results['acc'])
+            history['f1'].append(vali_results['f1'])
+            history['precision'].append(vali_results['precision'])
+            history['recall'].append(vali_results['recall'])
+        else:
+            accelerator.print(f"Epoch: {epoch + 1} | Train Loss: {avg_train_loss:.6f} | Vali Loss: {vali_results['loss']:.6f} | Test Loss: {test_results['loss']:.6f}")
 
-        early_stopping(vali_loss, model, path)
+
+        early_stopping(vali_results['loss'], model, path)
         if early_stopping.early_stop:
             accelerator.print("Early stopping")
             break
 
-        if args.lradj != 'TST':
-            if args.lradj == 'COS':
-                scheduler.step()
-                accelerator.print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
-            else:
-                if epoch == 0:
-                    args.learning_rate = model_optim.param_groups[0]['lr']
-                    accelerator.print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
-                adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=True)
-
-        else:
-            accelerator.print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
+        adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=True)
+    
+    # Vẽ và lưu biểu đồ
+    if accelerator.is_local_main_process:
+        fig_save_path = os.path.join('figures', setting + '-' + args.model_comment)
+        plot_loss(history['train_loss'], history['val_loss'], save_path=f"{fig_save_path}_loss.png")
+        if args.task_name == 'classification':
+            plot_classification_metrics({k: v for k, v in history.items() if k in ['acc', 'f1', 'precision', 'recall']},
+                                        save_path=f"{fig_save_path}_metrics.png")
 
 accelerator.wait_for_everyone()
 if accelerator.is_local_main_process:

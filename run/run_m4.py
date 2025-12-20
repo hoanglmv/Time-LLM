@@ -23,6 +23,7 @@ os.environ['CURL_CA_BUNDLE'] = ''
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
 
 from utils.tools import del_files, EarlyStopping, adjust_learning_rate, load_content, test
+from utils.visualize import plot_loss
 
 parser = argparse.ArgumentParser(description='Time-LLM')
 
@@ -171,6 +172,8 @@ for ii in range(args.itr):
     train_loader, vali_loader, model, model_optim, scheduler = accelerator.prepare(
         train_loader, vali_loader, model, model_optim, scheduler)
 
+    history = {'train_loss': [], 'val_loss': []}
+
     for epoch in range(args.train_epochs):
         iter_count = 0
         train_loss = []
@@ -220,9 +223,14 @@ for ii in range(args.itr):
                 scheduler.step()
 
         accelerator.print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
+        
         train_loss = np.average(train_loss)
         vali_loss = test(args, accelerator, model, train_loader, vali_loader, criterion)
-        test_loss = vali_loss
+        test_loss = vali_loss # In M4, validation and test are the same in this context
+        
+        history['train_loss'].append(train_loss)
+        history['val_loss'].append(vali_loss.item())
+
         accelerator.print(
             "Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
@@ -235,6 +243,12 @@ for ii in range(args.itr):
             adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=True)
         else:
             accelerator.print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
+
+    # Vẽ và lưu biểu đồ loss
+    if accelerator.is_local_main_process:
+        fig_save_path = os.path.join('figures', setting + '-' + args.model_comment)
+        plot_loss(history['train_loss'], history['val_loss'], save_path=f"{fig_save_path}_loss.png")
+
 
     best_model_path = path + '/' + 'checkpoint'
     accelerator.wait_for_everyone()

@@ -3,6 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import shutil
 import os
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 from tqdm import tqdm
 
@@ -141,74 +142,93 @@ def vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric
     total_loss = []
     total_mae_loss = []
     
-    # List để gom kết quả dự báo
-    preds = []
-    trues = []
+    # Metrics for classification
+    total_acc = []
+    total_f1 = []
+    total_precision = []
+    total_recall = []
+
+    preds_list = []
+    trues_list = []
     
     model.eval()
     with torch.no_grad():
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader)):
-            batch_x = batch_x.float().to(accelerator.device)
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in tqdm(enumerate(vali_loader), disable=True):
+            device = accelerator.device if accelerator is not None else 'cuda' if torch.cuda.is_available() else 'cpu'
+            batch_x = batch_x.float().to(device)
             batch_y = batch_y.float()
 
-            batch_x_mark = batch_x_mark.float().to(accelerator.device)
-            batch_y_mark = batch_y_mark.float().to(accelerator.device)
+            batch_x_mark = batch_x_mark.float().to(device)
+            batch_y_mark = batch_y_mark.float().to(device)
 
             # decoder input
             dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
-            dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(
-                accelerator.device)
-            # encoder - decoder
-            if args.use_amp:
-                with torch.cuda.amp.autocast():
-                    if args.output_attention:
-                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-            else:
-                if args.output_attention:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                else:
-                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
-            outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
-
-            f_dim = -1 if args.features == 'MS' else 0
-            outputs = outputs[:, -args.pred_len:, f_dim:]
-            batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
-
-            pred = outputs.detach()
-            true = batch_y.detach()
-
-            loss = criterion(pred, true)
-            mae_loss = mae_metric(pred, true)
-
-            total_loss.append(loss.item())
-            total_mae_loss.append(mae_loss.item())
+            dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(device)
             
-            # --- Gom dữ liệu để lưu ---
-            if folder_path is not None:
-                preds.append(pred.cpu().numpy())
-                trues.append(true.cpu().numpy())
+            # model call
+            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-    total_loss = np.average(total_loss)
-    total_mae_loss = np.average(total_mae_loss)
+            # Gather metrics if using accelerator
+            if accelerator is not None:
+                outputs, batch_y = accelerator.gather_for_metrics((outputs, batch_y))
 
-    # --- LƯU FILE KẾT QUẢ NẾU CÓ ĐƯỜNG DẪN ---
-    if folder_path is not None:
-        preds = np.concatenate(preds, axis=0)
-        trues = np.concatenate(trues, axis=0)
-        
-        # Tạo thư mục nếu chưa có
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-            
+            # Handle different tasks
+            if args.task_name == 'classification':
+                pred_labels = torch.argmax(outputs, dim=1)
+                true_labels = batch_y.long().squeeze() # Remove unnecessary dimensions
+                
+                # Move to CPU for sklearn
+                pred_labels = pred_labels.cpu().numpy()
+                true_labels = true_labels.cpu().numpy()
+
+                total_acc.append(accuracy_score(true_labels, pred_labels))
+                total_f1.append(f1_score(true_labels, pred_labels, average='macro', zero_division=0))
+                total_precision.append(precision_score(true_labels, pred_labels, average='macro', zero_division=0))
+                total_recall.append(recall_score(true_labels, pred_labels, average='macro', zero_division=0))
+                
+                # Loss is still calculated on raw outputs
+                loss = criterion(outputs.cpu(), batch_y.long().squeeze().cpu())
+                total_loss.append(loss.item())
+
+            else: # Forecasting tasks
+                f_dim = -1 if args.features == 'MS' else 0
+                outputs = outputs[:, -args.pred_len:, f_dim:]
+                batch_y = batch_y[:, -args.pred_len:, f_dim:].to(device)
+
+                pred = outputs.detach()
+                true = batch_y.detach()
+
+                loss = criterion(pred, true)
+                mae_loss = mae_metric(pred, true)
+
+                total_loss.append(loss.item())
+                total_mae_loss.append(mae_loss.item())
+                
+                if folder_path is not None:
+                    preds_list.append(pred.cpu().numpy())
+                    trues_list.append(true.cpu().numpy())
+
+    results = {}
+    if args.task_name == 'classification':
+        results['acc'] = np.average(total_acc)
+        results['f1'] = np.average(total_f1)
+        results['precision'] = np.average(total_precision)
+        results['recall'] = np.average(total_recall)
+        results['loss'] = np.average(total_loss)
+    else:
+        results['loss'] = np.average(total_loss)
+        results['mae'] = np.average(total_mae_loss)
+
+    # Save prediction files if a path is provided (for forecasting)
+    if folder_path is not None and args.task_name != 'classification':
+        preds = np.concatenate(preds_list, axis=0)
+        trues = np.concatenate(trues_list, axis=0)
+        os.makedirs(folder_path, exist_ok=True)
         np.save(os.path.join(folder_path, 'pred.npy'), preds)
         np.save(os.path.join(folder_path, 'true.npy'), trues)
-        # np.save(os.path.join(folder_path, 'metrics.npy'), np.array([total_loss, total_mae_loss]))
 
     model.train()
-    return total_loss, total_mae_loss
+    return results
 
 
 def test(args, accelerator, model, train_loader, vali_loader, criterion):

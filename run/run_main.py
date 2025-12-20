@@ -13,6 +13,7 @@ import os
 from models import Autoformer, DLinear, TimeLLM
 from prepare_data.data_provider.data_factory import data_provider
 from utils.tools import del_files, EarlyStopping, adjust_learning_rate, vali, load_content
+from utils.visualize import plot_loss, plot_classification_metrics
 
 # Thiết lập môi trường
 os.environ['CURL_CA_BUNDLE'] = ''
@@ -155,7 +156,7 @@ if __name__ == '__main__':
                                                 epochs=args.train_epochs,
                                                 max_lr=args.learning_rate)
 
-        criterion = nn.MSELoss()
+        criterion = nn.CrossEntropyLoss() if args.task_name == 'classification' else nn.MSELoss()
         mae_metric = nn.L1Loss()
 
         train_loader, vali_loader, test_loader, model, model_optim, scheduler = accelerator.prepare(
@@ -167,7 +168,12 @@ if __name__ == '__main__':
         # === PHẦN TRAINING (Chỉ chạy khi --is_training 1) ===
         if args.is_training:
             accelerator.print(">>>>>>> Start Training <<<<<<<")
-            loss_history = []
+            # Lịch sử để vẽ biểu đồ
+            history = {
+                'train_loss': [], 'val_loss': [], 'test_loss': [],
+                'acc': [], 'f1': [], 'precision': [], 'recall': []
+            }
+
             for epoch in range(args.train_epochs):
                 iter_count = 0
                 train_loss = []
@@ -183,85 +189,72 @@ if __name__ == '__main__':
                     batch_x_mark = batch_x_mark.float().to(accelerator.device)
                     batch_y_mark = batch_y_mark.float().to(accelerator.device)
 
-                    dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float().to(accelerator.device)
+                    dec_inp = torch.zeros_like(batch_y[:, -args.pred_len:, :]).float()
                     dec_inp = torch.cat([batch_y[:, :args.label_len, :], dec_inp], dim=1).float().to(accelerator.device)
 
-                    if args.use_amp:
-                        with torch.cuda.amp.autocast():
-                            if args.output_attention:
-                                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                            else:
-                                outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                    # Forward pass
+                    outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-                            f_dim = -1 if args.features == 'MS' else 0
-                            outputs = outputs[:, -args.pred_len:, f_dim:]
-                            batch_y = batch_y[:, -args.pred_len:, f_dim:].to(accelerator.device)
-                            loss = criterion(outputs, batch_y)
-                            train_loss.append(loss.item())
+                    # Tính loss dựa trên tác vụ
+                    if args.task_name == 'classification':
+                        loss = criterion(outputs, batch_y.long().squeeze())
                     else:
-                        if args.output_attention:
-                            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                        else:
-                            outputs = model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
                         f_dim = -1 if args.features == 'MS' else 0
                         outputs = outputs[:, -args.pred_len:, f_dim:]
                         batch_y = batch_y[:, -args.pred_len:, f_dim:]
                         loss = criterion(outputs, batch_y)
-                        train_loss.append(loss.item())
+
+                    train_loss.append(loss.item())
 
                     if (i + 1) % 100 == 0:
-                        accelerator.print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
+                        accelerator.print(f"\titers: {i + 1}, epoch: {epoch + 1} | loss: {loss.item():.7f}")
                         speed = (time.time() - time_now) / iter_count
                         left_time = speed * ((args.train_epochs - epoch) * train_steps - i)
-                        accelerator.print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
+                        accelerator.print(f'\tspeed: {speed:.4f}s/iter; left time: {left_time:.4f}s')
                         iter_count = 0
                         time_now = time.time()
+                    
+                    accelerator.backward(loss)
+                    model_optim.step()
 
-                    if args.use_amp:
-                        scaler.scale(loss).backward()
-                        scaler.step(model_optim)
-                        scaler.update()
-                    else:
-                        accelerator.backward(loss)
-                        model_optim.step()
+                # Kết thúc Epoch
+                accelerator.print(f"Epoch: {epoch + 1} cost time: {time.time() - epoch_time:.2f}s")
+                avg_train_loss = np.average(train_loss)
+                history['train_loss'].append(avg_train_loss)
 
-                    if args.lradj == 'TST':
-                        adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=False)
-                        scheduler.step()
-
-                accelerator.print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
-                train_loss = np.average(train_loss)
-                vali_loss, vali_mae_loss = vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric)
-                test_loss, test_mae_loss = vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric)
-
-                accelerator.print("Epoch: {0} | Train Loss: {1:.7f} Vali Loss: {2:.7f} Test Loss: {3:.7f}".format(
-                    epoch + 1, train_loss, vali_loss, test_loss))
+                # Đánh giá
+                vali_results = vali(args, accelerator, model, vali_data, vali_loader, criterion, mae_metric)
+                test_results = vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric)
                 
-                loss_history.append([train_loss, vali_loss, test_loss])
+                history['val_loss'].append(vali_results['loss'])
+                history['test_loss'].append(test_results['loss'])
 
-                early_stopping(vali_loss, model, path)
+                # In kết quả
+                if args.task_name == 'classification':
+                    accelerator.print(f"Epoch: {epoch + 1} | Train Loss: {avg_train_loss:.4f} | Vali Loss: {vali_results['loss']:.4f} | Acc: {vali_results['acc']:.4f} | F1: {vali_results['f1']:.4f}")
+                    history['acc'].append(vali_results['acc'])
+                    history['f1'].append(vali_results['f1'])
+                    history['precision'].append(vali_results['precision'])
+                    history['recall'].append(vali_results['recall'])
+                else:
+                    accelerator.print(f"Epoch: {epoch + 1} | Train Loss: {avg_train_loss:.6f} | Vali Loss: {vali_results['loss']:.6f} | Test Loss: {test_results['loss']:.6f}")
+
+                early_stopping(vali_results['loss'], model, path)
                 if early_stopping.early_stop:
                     accelerator.print("Early stopping")
                     break
 
-                if args.lradj != 'TST':
-                    if args.lradj == 'COS':
-                        scheduler.step()
-                        accelerator.print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
-                    else:
-                        if epoch == 0:
-                            args.learning_rate = model_optim.param_groups[0]['lr']
-                            accelerator.print("lr = {:.10f}".format(model_optim.param_groups[0]['lr']))
-                        adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=True)
-                else:
-                    accelerator.print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
+                adjust_learning_rate(accelerator, model_optim, scheduler, epoch + 1, args, printout=True)
+
+            accelerator.print(">>>>>>> Training Finished <<<<<<<")
             
-            # Lưu lịch sử loss để vẽ biểu đồ
-            result_save_path = os.path.join('./results/', setting)
-            if not os.path.exists(result_save_path): os.makedirs(result_save_path)
-            np.save(os.path.join(result_save_path, 'loss.npy'), np.array(loss_history))
-            accelerator.print(f"✅ Đã lưu file Loss tại: {result_save_path}/loss.npy")
+            # Vẽ và lưu biểu đồ
+            if accelerator.is_local_main_process:
+                fig_save_path = os.path.join('figures', setting + '-' + args.model_comment)
+                plot_loss(history['train_loss'], history['val_loss'], save_path=f"{fig_save_path}_loss.png")
+                if args.task_name == 'classification':
+                    plot_classification_metrics({k: v for k, v in history.items() if k in ['acc', 'f1', 'precision', 'recall']},
+                                                save_path=f"{fig_save_path}_metrics.png")
 
         # === PHẦN TESTING & PREDICTION (Chạy cho cả Train và Test mode) ===
         accelerator.print('>>>>>>> Loading Best Model for Testing <<<<<<<')
@@ -269,20 +262,22 @@ if __name__ == '__main__':
         
         if not os.path.exists(best_model_path):
             accelerator.print(f"❌ Không tìm thấy file checkpoint tại: {best_model_path}")
-            accelerator.print("Nếu bạn đang chạy Test (--is_training 0), hãy chắc chắn bạn đã Train trước đó.")
         else:
-            model.load_state_dict(torch.load(best_model_path))
+            # Tải model đã lưu
+            unwrapped_model = accelerator.unwrap_model(model)
+            unwrapped_model.load_state_dict(torch.load(best_model_path, map_location=accelerator.device))
             
-            # Tạo thư mục lưu kết quả nếu chưa có
-            folder_path = './results/' + setting + '/'
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
+            folder_path = './results/' + setting + '-' + args.model_comment + '/'
+            os.makedirs(folder_path, exist_ok=True)
 
-            accelerator.print('>>>>>>> Start Inference (Prediction) <<<<<<<')
-            # Hàm vali() sẽ tự động lưu pred.npy và true.npy vào folder_path
-            vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric, folder_path=folder_path)
+            accelerator.print('>>>>>>> Start Final Evaluation <<<<<<<')
+            final_results = vali(args, accelerator, model, test_data, test_loader, criterion, mae_metric, folder_path=folder_path)
             
-            accelerator.print(f'✅ Kết quả dự đoán đã lưu tại: {folder_path}')
+            if args.task_name == 'classification':
+                accelerator.print(f"🎉 Final Test Results -> Loss: {final_results['loss']:.4f} | Acc: {final_results['acc']:.4f} | F1: {final_results['f1']:.4f}")
+            else:
+                accelerator.print(f"🎉 Final Test Results -> Loss(MSE): {final_results['loss']:.6f} | MAE: {final_results['mae']:.6f}")
+                accelerator.print(f'✅ Kết quả dự đoán (pred.npy, true.npy) đã lưu tại: {folder_path}')
 
     accelerator.wait_for_everyone()
 
