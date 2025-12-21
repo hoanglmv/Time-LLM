@@ -1,3 +1,27 @@
+"""
+Tệp này tập hợp một "họ" các cơ chế attention khác nhau, là thành phần trung tâm của các kiến trúc Transformer.
+Nó cung cấp các cài đặt (implementations) cho cả attention tiêu chuẩn và các biến thể hiệu quả hơn được thiết kế
+để giải quyết vấn đề độ phức tạp tính toán O(L^2) với chuỗi dài.
+
+Các lớp chính trong tệp này:
+- `AttentionLayer`: Một lớp bao bọc (wrapper) chung cho cơ chế multi-head attention. Nó nhận vào một cơ chế
+  "inner_attention" cụ thể (ví dụ: FullAttention, ProbAttention) và thực hiện các phép chiếu tuyến tính
+  (linear projection) cho Query, Key, và Value.
+
+- `FullAttention`: Cơ chế self-attention đầy đủ, kinh điển từ bài báo "Attention Is All You Need".
+  Nó tính toán điểm số cho tất cả các cặp query-key, phù hợp cho chuỗi ngắn nhưng tốn kém với chuỗi dài.
+
+- `ProbAttention`: Cơ chế "ProbSparse" attention từ mô hình Informer. Đây là một phương pháp xấp xỉ hiệu quả,
+  thay vì tính toán tất cả các cặp query-key, nó chỉ chọn ra một tập con các query "quan trọng" nhất
+  để tính toán, giúp giảm độ phức tạp xuống O(L log L).
+
+- `DSAttention` (De-stationary Attention): Một biến thể của attention được thiết kế để xử lý các chuỗi thời gian
+  không dừng (non-stationary) bằng cách thêm vào các yếu tố học được (tau, delta) để điều chỉnh điểm số attention.
+
+- `ReformerLayer`: Triển khai attention sử dụng Băm nhạy cục bộ (Locality-Sensitive Hashing - LSH) từ mô hình Reformer.
+  Kỹ thuật này nhóm các query tương tự lại với nhau và chỉ tính attention trong từng nhóm, là một cách tiếp cận
+  hiệu quả khác cho chuỗi dài.
+"""
 import torch
 import torch.nn as nn
 import numpy as np

@@ -1,3 +1,18 @@
+"""
+Tệp này định nghĩa các khối tích chập (Convolutional Blocks) lấy cảm hứng từ kiến trúc Inception,
+thường được sử dụng trong các mô hình thị giác máy tính và đã được điều chỉnh cho các nhiệm vụ chuỗi thời gian.
+
+Mục đích chính của các khối này là để trích xuất đặc trưng (feature extraction) ở nhiều quy mô (multi-scale)
+khác nhau một cách đồng thời. Điều này đạt được bằng cách áp dụng nhiều bộ lọc tích chập với các kích thước
+kernel khác nhau lên cùng một dữ liệu đầu vào và sau đó kết hợp các kết quả đầu ra.
+
+- Inception_Block_V1: Sử dụng các kernel 2D đối xứng với các kích thước khác nhau (ví dụ: 1x1, 3x3, 5x5...)
+  để nắm bắt các mẫu ở các độ dài khác nhau.
+- Inception_Block_V2: Sử dụng các kernel 2D bất đối xứng (ví dụ: 1x3 và 3x1) để giảm số lượng tham số
+  và chi phí tính toán so với các kernel đối xứng lớn, trong khi vẫn có khả năng trích xuất đặc trưng hiệu quả.
+
+Các khối này có thể được dùng như một phần của bộ mã hóa (encoder) trong các mô hình dự báo chuỗi thời gian dựa trên CNN.
+"""
 import torch
 import torch.nn as nn
 

@@ -1,3 +1,16 @@
+"""
+Tệp này triển khai cơ chế Tự tương quan (Auto-Correlation), đây là thành phần cốt lõi của mô hình Autoformer.
+Cơ chế này được thiết kế để thay thế cho Self-Attention trong các mô hình Transformer truyền thống.
+
+Chức năng chính của Auto-Correlation là khám phá các phụ thuộc trong chuỗi thời gian dựa trên tính chu kỳ (period-based dependencies)
+và tổng hợp các chuỗi con có độ trễ thời gian (time delay aggregation) tương ứng. Bằng cách làm việc trong miền tần số
+sử dụng biến đổi Fourier (FFT), nó có thể nắm bắt các mối tương quan dài hạn một cách hiệu quả hơn về mặt tính toán
+so với Self-Attention, đặc biệt là với các chuỗi thời gian dài.
+
+Bao gồm 2 lớp chính:
+- AutoCorrelation: Thực hiện logic tính toán tự tương quan.
+- AutoCorrelationLayer: Lớp bao bọc (wrapper) tích hợp AutoCorrelation vào kiến trúc model, tương tự như một lớp Multi-Head Attention.
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -1,3 +1,25 @@
+"""
+Tệp này chứa các lớp (classes) để tạo và kết hợp các loại embedding khác nhau cho dữ liệu chuỗi thời gian,
+chuẩn bị đầu vào cho các mô hình dựa trên Transformer. Một embedding hoàn chỉnh thường là sự kết hợp của ba thành phần:
+
+1.  **Value Embedding (`TokenEmbedding`)**:
+    Mã hóa giá trị (value) của chuỗi thời gian. Thay vì dùng một lớp `nn.Embedding` đơn giản, nó sử dụng một lớp
+    tích chập 1D (`Conv1d`) để chiếu (project) các đặc trưng đầu vào thành không gian vector của mô hình.
+    Điều này giúp nắm bắt các mẫu cục bộ trong dữ liệu.
+
+2.  **Positional Embedding (`PositionalEmbedding`)**:
+    Mã hóa vị trí (thứ tự) của mỗi điểm dữ liệu trong chuỗi. Tệp này sử dụng phương pháp mã hóa vị trí
+    sinusoidal kinh điển từ bài báo "Attention Is All You Need".
+
+3.  **Temporal Embedding (`TemporalEmbedding`, `TimeFeatureEmbedding`)**:
+    Mã hóa các đặc trưng về mặt thời gian (ví dụ: giờ trong ngày, ngày trong tuần, tháng...).
+    - `TemporalEmbedding` dùng cho các đặc trưng thời gian dạng phân loại (categorical).
+    - `TimeFeatureEmbedding` dùng cho các đặc trưng thời gian dạng số (numerical).
+
+Các thành phần trên được kết hợp lại trong lớp `DataEmbedding`. Tệp cũng bao gồm các biến thể như `DataEmbedding_wo_pos`
+(không có positional embedding) và `PatchEmbedding` (một kỹ thuật chia chuỗi thành các "mảng" (patch) nhỏ rồi mới embedding,
+lấy cảm hứng từ Vision Transformer).
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

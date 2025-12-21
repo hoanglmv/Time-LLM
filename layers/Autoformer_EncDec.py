@@ -1,3 +1,21 @@
+"""
+Tệp này định nghĩa các khối kiến trúc cốt lõi cho mô hình Autoformer, bao gồm Encoder, Decoder, và các thành phần phụ trợ.
+
+Kiến trúc của Autoformer nổi bật với cơ chế "Phân rã lũy tiến" (Progressive Decomposition), được triển khai trong các lớp `series_decomp` và `moving_avg`.
+Ý tưởng chính là tách chuỗi thời gian thành hai thành phần tại mỗi lớp:
+1.  **Thành phần Xu hướng (Trend)**: Được trích xuất bằng một khối trung bình trượt (moving average).
+2.  **Thành phần Mùa vụ (Seasonal)**: Là phần còn lại sau khi đã loại bỏ xu hướng.
+
+Cơ chế Auto-Correlation (được truyền vào dưới dạng `attention`) sau đó sẽ được áp dụng trên thành phần mùa vụ,
+giúp mô hình tập trung vào việc học các quy luật có tính chu kỳ phức tạp. Các thành phần xu hướng được tổng hợp lại ở cuối Decoder
+để tạo ra dự báo cuối cùng.
+
+Các lớp chính trong tệp này:
+- `series_decomp`: Khối phân rã chuỗi thành phần xu hướng và mùa vụ.
+- `EncoderLayer`, `Encoder`: Định nghĩa kiến trúc của Encoder trong Autoformer.
+- `DecoderLayer`, `Decoder`: Định nghĩa kiến trúc của Decoder trong Autoformer, nơi kết hợp thông tin từ Encoder
+  và tái tạo lại chuỗi dự báo.
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
