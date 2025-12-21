@@ -75,7 +75,7 @@ python run/run_main.py \
   --enc_in 321 \
   --dec_in 321 \
   --c_out 321 \
-  --batch_size 16 \
+  --batch_size 4 \
   --learning_rate 0.001 \
   --llm_layers 12 \
   --train_epochs 10 \
