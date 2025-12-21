@@ -29,7 +29,7 @@ from tqdm import tqdm
 import time
 import random
 import numpy as np
-import os
+import pandas as pd # <--- ĐÃ THÊM THƯ VIỆN PANDAS
 
 from models import Autoformer, DLinear, TimeLLM
 from prepare_data.data_provider.data_factory import data_provider
@@ -135,6 +135,7 @@ if __name__ == '__main__':
     # -----------------------------
 
     for ii in range(args.itr):
+        # setting record of experiments
         setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_{}_{}'.format(
             args.task_name, args.model_id, args.model, args.data, args.features,
             args.seq_len, args.label_len, args.pred_len,
@@ -270,9 +271,39 @@ if __name__ == '__main__':
 
             accelerator.print(">>>>>>> Training Finished <<<<<<<")
 
+            # === PHẦN THÊM MỚI: LƯU LOSS HISTORY RA CSV ===
+            if accelerator.is_local_main_process:
+                try:
+                    # Tạo dictionary chứa dữ liệu
+                    loss_data = {
+                        'Epoch': list(range(1, len(history['train_loss']) + 1)),
+                        'Train Loss': history['train_loss'],
+                        'Val Loss': history['val_loss'],
+                        'Test Loss': history['test_loss']
+                    }
+                    
+                    # Thêm các metrics khác nếu là bài toán phân loại
+                    if args.task_name == 'classification':
+                        for key in ['acc', 'f1', 'precision', 'recall']:
+                            if key in history and len(history[key]) > 0:
+                                loss_data[key] = history[key]
+
+                    # Tạo DataFrame và lưu
+                    df_loss = pd.DataFrame(loss_data)
+                    loss_save_path = os.path.join(path, 'loss_history.csv')
+                    df_loss.to_csv(loss_save_path, index=False)
+                    accelerator.print(f"✅ Đã lưu file lịch sử Loss tại: {loss_save_path}")
+                except Exception as e:
+                    accelerator.print(f"❌ Lỗi khi lưu file CSV loss: {e}")
+            # ===============================================
+
             # Vẽ và lưu biểu đồ
             if accelerator.is_local_main_process:
                 fig_save_path = os.path.join('figures', setting + '-' + args.model_comment)
+                # Đảm bảo thư mục figures tồn tại
+                if not os.path.exists('figures'):
+                    os.makedirs('figures')
+                    
                 plot_loss(history['train_loss'], history['val_loss'], save_path=f"{fig_save_path}_loss.png")
                 if args.task_name == 'classification':
                     plot_classification_metrics({k: v for k, v in history.items() if k in ['acc', 'f1', 'precision', 'recall']},
@@ -302,8 +333,6 @@ if __name__ == '__main__':
                 accelerator.print(f'✅ Kết quả dự đoán (pred.npy, true.npy) đã lưu tại: {folder_path}')
 
     accelerator.wait_for_everyone()
-
-
 
     # TẮT TÍNH NĂNG TỰ XÓA FILE ĐỂ BẢO VỆ MODEL
     # if accelerator.is_local_main_process:
