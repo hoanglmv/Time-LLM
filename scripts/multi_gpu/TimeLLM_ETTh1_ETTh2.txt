@@ -1,0 +1,112 @@
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes 8 --main_process_port 00097 run/run_pretrain.py \
+  --task_name long_term_forecast \
+  --is_training 1 \
+  --root_path ./dataset/ETT-small/ \
+  --data_path_pretrain ETTh1.csv \
+  --data_path ETTh2.csv \
+  --model_id ETTh1_ETTh2_512_96 \
+  --model TimeLLM \
+  --data_pretrain ETTh1 \
+  --data ETTh2 \
+  --features M \
+  --seq_len 512 \
+  --label_len 48 \
+  --pred_len 96 \
+  --factor 3 \
+  --enc_in 7 \
+  --dec_in 7 \
+  --c_out 7 \
+  --des 'Exp' \
+  --itr 1 \
+  --d_model 32 \
+  --d_ff 128 \
+  --batch_size 24 \
+  --learning_rate 0.01 \
+  --llm_layers 32 \
+  --train_epochs 5 \
+  --model_comment 'TimeLLM-ETTh1_ETTh2'
+
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes 8 --main_process_port 00097 run/run_pretrain.py \
+  --task_name long_term_forecast \
+  --is_training 1 \
+  --root_path ./dataset/ETT-small/ \
+  --data_path_pretrain ETTh1.csv \
+  --data_path ETTh2.csv \
+  --model_id ETTh1_ETTh2_512_192 \
+  --model TimeLLM \
+  --data_pretrain ETTh1 \
+  --data ETTh2 \
+  --features M \
+  --seq_len 512 \
+  --label_len 48 \
+  --pred_len 192 \
+  --factor 3 \
+  --enc_in 7 \
+  --dec_in 7 \
+  --c_out 7 \
+  --des 'Exp' \
+  --itr 1 \
+  --d_model 32 \
+  --d_ff 128 \
+  --batch_size 24 \
+  --learning_rate 0.02 \
+  --llm_layers 32 \
+  --train_epochs 5 \
+  --model_comment 'TimeLLM-ETTh1_ETTh2'
+
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes 8 --main_process_port 00097 run/run_pretrain.py \
+  --task_name long_term_forecast \
+  --is_training 1 \
+  --root_path ./dataset/ETT-small/ \
+  --data_path_pretrain ETTh1.csv \
+  --data_path ETTh2.csv \
+  --model_id ETTh1_ETTh2_512_336 \
+  --model TimeLLM \
+  --data_pretrain ETTh1 \
+  --data ETTh2 \
+  --features M \
+  --seq_len 512 \
+  --label_len 48 \
+  --pred_len 336 \
+  --factor 3 \
+  --enc_in 7 \
+  --dec_in 7 \
+  --c_out 7 \
+  --des 'Exp' \
+  --itr 1 \
+  --d_model 32 \
+  --d_ff 128 \
+  --batch_size 24 \
+  --lradj 'COS'\
+  --learning_rate 0.001 \
+  --llm_layers 32 \
+  --train_epochs 5 \
+  --model_comment 'TimeLLM-ETTh1_ETTh2'
+
+accelerate launch --multi_gpu --mixed_precision bf16 --num_processes 8 --main_process_port 00097 run/run_pretrain.py \
+  --task_name long_term_forecast \
+  --is_training 1 \
+  --root_path ./dataset/ETT-small/ \
+  --data_path_pretrain ETTh1.csv \
+  --data_path ETTh2.csv \
+  --model_id ETTh1_ETTh2_512_720 \
+  --model TimeLLM \
+  --data_pretrain ETTh1 \
+  --data ETTh2 \
+  --features M \
+  --seq_len 512 \
+  --label_len 48 \
+  --pred_len 720 \
+  --factor 3 \
+  --enc_in 7 \
+  --dec_in 7 \
+  --c_out 7 \
+  --des 'Exp' \
+  --itr 1 \
+  --d_model 32 \
+  --d_ff 128 \
+  --batch_size 24 \
+  --learning_rate 0.01 \
+  --llm_layers 32 \
+  --train_epochs 5 \
+  --model_comment 'TimeLLM-ETTh1_ETTh2'
