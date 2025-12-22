@@ -1,0 +1,75 @@
+python run/run_main.py `
+  --task_name long_term_forecast `
+  --is_training 1 `
+  --root_path ./dataset/network/ `
+  --data_path enodebA_enodebA1.csv `
+  --model_id NodeA1_512_96_DLinear `
+  --model_comment DLinear_NodeA1 `
+  --model DLinear `
+  --data custom `
+  --features M `
+  --seq_len 512 `
+  --label_len 48 `
+  --pred_len 96 `
+  --enc_in 5 `
+  --dec_in 5 `
+  --c_out 5 `
+  --target ps_traffic_mb `
+  --batch_size 16 `
+  --learning_rate 0.001 `
+  --train_epochs 10 `
+  --des "Exp_DLinear_Network_A1"
+
+
+  python run/run_main.py `
+  --task_name long_term_forecast `
+  --is_training 1 `
+  --root_path ./dataset/network/ `
+  --data_path enodebA_enodebA1.csv `
+  --model_id NodeA1_512_96_Autoformer `
+  --model_comment Autoformer_NodeA1 `
+  --model Autoformer `
+  --data custom `
+  --features M `
+  --seq_len 512 `
+  --label_len 48 `
+  --pred_len 96 `
+  --enc_in 5 `
+  --dec_in 5 `
+  --c_out 5 `
+  --d_model 512 `
+  --d_ff 2048 `
+  --n_heads 8 `
+  --e_layers 2 `
+  --d_layers 1 `
+  --target ps_traffic_mb `
+  --batch_size 16 `
+  --learning_rate 0.0001 `
+  --train_epochs 10 `
+  --des "Exp_Autoformer_Network_A1"
+
+
+  python run/run_main.py `
+  --task_name long_term_forecast `
+  --is_training 1 `
+  --root_path ./dataset/network/ `
+  --data_path enodebA_enodebA1.csv `
+  --model_id NodeA1_512_96_TimeLLM `
+  --model_comment TimeLLM_NodeA1 `
+  --model TimeLLM `
+  --data custom `
+  --features M `
+  --seq_len 512 `
+  --label_len 48 `
+  --pred_len 96 `
+  --enc_in 5 `
+  --dec_in 5 `
+  --c_out 5 `
+  --d_model 32 `
+  --d_ff 128 `
+  --llm_layers 6 `
+  --target ps_traffic_mb `
+  --batch_size 8 `
+  --learning_rate 0.001 `
+  --train_epochs 10 `
+  --des "Exp_TimeLLM_Network_A1"

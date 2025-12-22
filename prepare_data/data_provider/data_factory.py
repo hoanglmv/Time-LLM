@@ -38,7 +38,8 @@ data_dict = {
     'Weather': Dataset_Custom,
     'NetworksKPI': Dataset_Custom, # Thêm bộ dữ liệu NetworksKPI
     'm4': Dataset_M4,
-    'TelecomKPI': Dataset_Custom
+    'TelecomKPI': Dataset_Custom,
+    'custom': Dataset_Custom
 }
 
 

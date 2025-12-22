@@ -241,26 +241,27 @@ class Dataset_Custom(Dataset):
         self.scaler = StandardScaler()
         df_raw = pd.read_csv(os.path.join(self.root_path, self.data_path))
 
-        # --- FIX LỖI THIẾU CỘT: Xử lý linh hoạt hơn ---
-        # 1. Đảm bảo cột target luôn có mặt
-        if self.target not in df_raw.columns:
-             # Nếu không tìm thấy target chính xác, thử tìm cột có tên gần giống hoặc lấy cột cuối cùng
-             print(f"⚠️ Cảnh báo: Không tìm thấy cột target '{self.target}'. Đang dùng cột cuối cùng làm target.")
-             self.target = df_raw.columns[-1]
-
-        # 2. Sắp xếp lại cột: Đẩy các features lên đầu, target xuống cuối, date bỏ ra
         cols = list(df_raw.columns)
-        if 'date' in cols:
-            cols.remove('date')
-        if self.target in cols:
-            cols.remove(self.target)
         
-        # Tạo dataframe mới với thứ tự cột chuẩn: [Features..., Target]
-        df_raw = df_raw[['date'] + cols + [self.target]]
+        # Select only numeric columns for feature processing, excluding 'date'
+        if self.features == 'M' or self.features == 'MS':
+            df_data = df_raw.select_dtypes(include=np.number)
+        elif self.features == 'S':
+            df_data = df_raw[[self.target]]
+
+        # Handle target column if not numeric
+        if self.target not in df_data.columns:
+             print(f"⚠️ Cảnh báo: Không tìm thấy cột target '{self.target}' hoặc cột không phải kiểu số. Đang dùng cột số cuối cùng làm target.")
+             self.target = df_data.columns[-1]
+
+        # Reorder df_data to have target at the end (optional but good practice)
+        if self.target in df_data.columns:
+            other_cols = [col for col in df_data.columns if col != self.target]
+            df_data = df_data[other_cols + [self.target]]
         
         # --- DEBUG: In ra để kiểm tra ---
-        print(f"📊 Dataset_Custom Columns: {df_raw.columns.tolist()}")
-        print(f"🔢 Shape: {df_raw.shape}")
+        print(f"📊 Dataset_Custom Numeric Columns: {df_data.columns.tolist()}")
+        print(f"🔢 Shape: {df_data.shape}")
         # -------------------------------
 
         num_train = int(len(df_raw) * 0.7)
@@ -276,16 +277,9 @@ class Dataset_Custom(Dataset):
         if self.set_type == 0:
             border2 = (border2 - self.seq_len) * self.percent // 100 + self.seq_len
 
-        if self.features == 'M' or self.features == 'MS':
-            # Lấy tất cả các cột trừ cột date (cột 0)
-            cols_data = df_raw.columns[1:] 
-            df_data = df_raw[cols_data]
-        elif self.features == 'S':
-            df_data = df_raw[[self.target]]
-
         if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
-            self.scaler.fit(train_data.values)
+            train_data = df_data.iloc[border1s[0]:border2s[0]].values
+            self.scaler.fit(train_data)
             data = self.scaler.transform(df_data.values)
         else:
             data = df_data.values

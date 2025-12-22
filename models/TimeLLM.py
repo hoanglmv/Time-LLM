@@ -1,19 +1,3 @@
-# Copyright 2024 The Time-LLM Authors. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# -*- coding: utf-8 -*-
-
 from math import sqrt
 
 import torch
@@ -52,45 +36,51 @@ class Model(nn.Module):
         self.seq_len = configs.seq_len
         self.d_ff = configs.d_ff
         self.top_k = 5
-        self.d_llm = int(configs.llm_dim)
+        self.d_llm = configs.llm_dim
         self.patch_len = configs.patch_len
         self.stride = configs.stride
 
         if configs.llm_model == 'LLAMA':
-            print("Dang tai model LLaMA tu HuggingFace (huggyllama/llama-7b)...")
-            # --- FIX: Dung repo online on dinh ---
-            llama_repo = 'huggyllama/llama-7b'
-            
-            self.llama_config = LlamaConfig.from_pretrained(llama_repo)
+            # self.llama_config = LlamaConfig.from_pretrained('/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/')
+            self.llama_config = LlamaConfig.from_pretrained('huggyllama/llama-7b')
             self.llama_config.num_hidden_layers = configs.llm_layers
             self.llama_config.output_attentions = True
             self.llama_config.output_hidden_states = True
-            
             try:
                 self.llm_model = LlamaModel.from_pretrained(
-                    llama_repo,
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
+                    'huggyllama/llama-7b',
+                    trust_remote_code=True,
+                    local_files_only=True,
+                    config=self.llama_config,
+                    # load_in_4bit=True
+                )
+            except EnvironmentError:  # downloads model from HF is not already done
+                print("Local model files not found. Attempting to download...")
+                self.llm_model = LlamaModel.from_pretrained(
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
+                    'huggyllama/llama-7b',
                     trust_remote_code=True,
                     local_files_only=False,
                     config=self.llama_config,
-                    # device_map="auto", # Bo comment neu muon tu dong chia GPU
-                    # load_in_4bit=True  # Bo comment neu ban da cai bitsandbytes de tiet kiem VRAM
+                    # load_in_4bit=True
                 )
-            except Exception as e:
-                print(f"Loi khi tai Model LLaMA: {e}")
-                raise e
-
             try:
                 self.tokenizer = LlamaTokenizer.from_pretrained(
-                    llama_repo,
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
+                    'huggyllama/llama-7b',
+                    trust_remote_code=True,
+                    local_files_only=True
+                )
+            except EnvironmentError:  # downloads the tokenizer from HF if not already done
+                print("Local tokenizer files not found. Atempting to download them..")
+                self.tokenizer = LlamaTokenizer.from_pretrained(
+                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
+                    'huggyllama/llama-7b',
                     trust_remote_code=True,
                     local_files_only=False
                 )
-            except Exception as e:
-                print(f"Loi khi tai Tokenizer LLaMA: {e}")
-                raise e
-
         elif configs.llm_model == 'GPT2':
-            print("Dang tai model GPT2 tu HuggingFace...")
             self.gpt2_config = GPT2Config.from_pretrained('openai-community/gpt2')
 
             self.gpt2_config.num_hidden_layers = configs.llm_layers
@@ -100,22 +90,31 @@ class Model(nn.Module):
                 self.llm_model = GPT2Model.from_pretrained(
                     'openai-community/gpt2',
                     trust_remote_code=True,
+                    local_files_only=True,
+                    config=self.gpt2_config,
+                )
+            except EnvironmentError:  # downloads model from HF is not already done
+                print("Local model files not found. Attempting to download...")
+                self.llm_model = GPT2Model.from_pretrained(
+                    'openai-community/gpt2',
+                    trust_remote_code=True,
                     local_files_only=False,
                     config=self.gpt2_config,
                 )
-            except Exception as e:
-                print(f"Loi khi tai GPT2: {e}")
-                raise e
 
             try:
                 self.tokenizer = GPT2Tokenizer.from_pretrained(
                     'openai-community/gpt2',
                     trust_remote_code=True,
+                    local_files_only=True
+                )
+            except EnvironmentError:  # downloads the tokenizer from HF if not already done
+                print("Local tokenizer files not found. Atempting to download them..")
+                self.tokenizer = GPT2Tokenizer.from_pretrained(
+                    'openai-community/gpt2',
+                    trust_remote_code=True,
                     local_files_only=False
                 )
-            except Exception as e:
-                 raise e
-
         elif configs.llm_model == 'BERT':
             self.bert_config = BertConfig.from_pretrained('google-bert/bert-base-uncased')
 
@@ -126,24 +125,34 @@ class Model(nn.Module):
                 self.llm_model = BertModel.from_pretrained(
                     'google-bert/bert-base-uncased',
                     trust_remote_code=True,
+                    local_files_only=True,
+                    config=self.bert_config,
+                )
+            except EnvironmentError:  # downloads model from HF is not already done
+                print("Local model files not found. Attempting to download...")
+                self.llm_model = BertModel.from_pretrained(
+                    'google-bert/bert-base-uncased',
+                    trust_remote_code=True,
                     local_files_only=False,
                     config=self.bert_config,
                 )
-            except Exception as e:
-                raise e
 
             try:
                 self.tokenizer = BertTokenizer.from_pretrained(
                     'google-bert/bert-base-uncased',
                     trust_remote_code=True,
+                    local_files_only=True
+                )
+            except EnvironmentError:  # downloads the tokenizer from HF if not already done
+                print("Local tokenizer files not found. Atempting to download them..")
+                self.tokenizer = BertTokenizer.from_pretrained(
+                    'google-bert/bert-base-uncased',
+                    trust_remote_code=True,
                     local_files_only=False
                 )
-            except Exception as e:
-                raise e
         else:
             raise Exception('LLM model is not defined')
 
-        # --- Fix padding token ---
         if self.tokenizer.eos_token:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         else:
@@ -215,7 +224,7 @@ class Model(nn.Module):
                 f"max value {max_values_str}, "
                 f"median value {median_values_str}, "
                 f"the trend of input is {'upward' if trends[b] > 0 else 'downward'}, "
-                f"top 5 lags are : {lags_values_str}<|<end_prompt|>|>"
+                f"top 5 lags are : {lags_values_str}<|<end_prompt>|>"
             )
 
             prompt.append(prompt_)
@@ -228,11 +237,7 @@ class Model(nn.Module):
         source_embeddings = self.mapping_layer(self.word_embeddings.permute(1, 0)).permute(1, 0)
 
         x_enc = x_enc.permute(0, 2, 1).contiguous()
-        
-        # --- FIX: Xoa .to(torch.bfloat16) de tranh loi xung dot type ---
-        enc_out, n_vars = self.patch_embedding(x_enc)
-        # --------------------------------------------------------------
-        
+        enc_out, n_vars = self.patch_embedding(x_enc.to(torch.bfloat16))
         enc_out = self.reprogramming_layer(enc_out, source_embeddings, source_embeddings)
         llama_enc_out = torch.cat([prompt_embeddings, enc_out], dim=1)
         dec_out = self.llm_model(inputs_embeds=llama_enc_out).last_hidden_state
