@@ -46,110 +46,66 @@ class Model(nn.Module):
             self.llama_config.num_hidden_layers = configs.llm_layers
             self.llama_config.output_attentions = True
             self.llama_config.output_hidden_states = True
-            try:
-                self.llm_model = LlamaModel.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
-                    'huggyllama/llama-7b',
-                    trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.llama_config,
-                    # load_in_4bit=True
-                )
-            except EnvironmentError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = LlamaModel.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
-                    'huggyllama/llama-7b',
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    config=self.llama_config,
-                    # load_in_4bit=True
-                )
-            try:
-                self.tokenizer = LlamaTokenizer.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
-                    'huggyllama/llama-7b',
-                    trust_remote_code=True,
-                    local_files_only=True
-                )
-            except EnvironmentError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = LlamaTokenizer.from_pretrained(
-                    # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
-                    'huggyllama/llama-7b',
-                    trust_remote_code=True,
-                    local_files_only=False
-                )
+            
+            print("⬇️ Loading Llama-7B Model (Downloading if not present)...")
+            self.llm_model = LlamaModel.from_pretrained(
+                # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/",
+                'huggyllama/llama-7b',
+                trust_remote_code=True,
+                local_files_only=False, # Fix: Always allow download/cache check
+                config=self.llama_config,
+                # load_in_4bit=True 
+            )
+
+            print("⬇️ Loading Llama-7B Tokenizer...")
+            self.tokenizer = LlamaTokenizer.from_pretrained(
+                # "/mnt/alps/modelhub/pretrained_model/LLaMA/7B_hf/tokenizer.model",
+                'huggyllama/llama-7b',
+                trust_remote_code=True,
+                local_files_only=False # Fix: Always allow download/cache check
+            )
+
         elif configs.llm_model == 'GPT2':
             self.gpt2_config = GPT2Config.from_pretrained('openai-community/gpt2')
 
             self.gpt2_config.num_hidden_layers = configs.llm_layers
             self.gpt2_config.output_attentions = True
             self.gpt2_config.output_hidden_states = True
-            try:
-                self.llm_model = GPT2Model.from_pretrained(
-                    'openai-community/gpt2',
-                    trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.gpt2_config,
-                )
-            except EnvironmentError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = GPT2Model.from_pretrained(
-                    'openai-community/gpt2',
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    config=self.gpt2_config,
-                )
+            
+            print("⬇️ Loading GPT2 Model...")
+            self.llm_model = GPT2Model.from_pretrained(
+                'openai-community/gpt2',
+                trust_remote_code=True,
+                local_files_only=False, # Fix: Always allow download/cache check
+                config=self.gpt2_config,
+            )
 
-            try:
-                self.tokenizer = GPT2Tokenizer.from_pretrained(
-                    'openai-community/gpt2',
-                    trust_remote_code=True,
-                    local_files_only=True
-                )
-            except EnvironmentError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = GPT2Tokenizer.from_pretrained(
-                    'openai-community/gpt2',
-                    trust_remote_code=True,
-                    local_files_only=False
-                )
+            self.tokenizer = GPT2Tokenizer.from_pretrained(
+                'openai-community/gpt2',
+                trust_remote_code=True,
+                local_files_only=False # Fix: Always allow download/cache check
+            )
+
         elif configs.llm_model == 'BERT':
             self.bert_config = BertConfig.from_pretrained('google-bert/bert-base-uncased')
 
             self.bert_config.num_hidden_layers = configs.llm_layers
             self.bert_config.output_attentions = True
             self.bert_config.output_hidden_states = True
-            try:
-                self.llm_model = BertModel.from_pretrained(
-                    'google-bert/bert-base-uncased',
-                    trust_remote_code=True,
-                    local_files_only=True,
-                    config=self.bert_config,
-                )
-            except EnvironmentError:  # downloads model from HF is not already done
-                print("Local model files not found. Attempting to download...")
-                self.llm_model = BertModel.from_pretrained(
-                    'google-bert/bert-base-uncased',
-                    trust_remote_code=True,
-                    local_files_only=False,
-                    config=self.bert_config,
-                )
+            
+            print("⬇️ Loading BERT Model...")
+            self.llm_model = BertModel.from_pretrained(
+                'google-bert/bert-base-uncased',
+                trust_remote_code=True,
+                local_files_only=False, # Fix: Always allow download/cache check
+                config=self.bert_config,
+            )
 
-            try:
-                self.tokenizer = BertTokenizer.from_pretrained(
-                    'google-bert/bert-base-uncased',
-                    trust_remote_code=True,
-                    local_files_only=True
-                )
-            except EnvironmentError:  # downloads the tokenizer from HF if not already done
-                print("Local tokenizer files not found. Atempting to download them..")
-                self.tokenizer = BertTokenizer.from_pretrained(
-                    'google-bert/bert-base-uncased',
-                    trust_remote_code=True,
-                    local_files_only=False
-                )
+            self.tokenizer = BertTokenizer.from_pretrained(
+                'google-bert/bert-base-uncased',
+                trust_remote_code=True,
+                local_files_only=False # Fix: Always allow download/cache check
+            )
         else:
             raise Exception('LLM model is not defined')
 
@@ -237,7 +193,11 @@ class Model(nn.Module):
         source_embeddings = self.mapping_layer(self.word_embeddings.permute(1, 0)).permute(1, 0)
 
         x_enc = x_enc.permute(0, 2, 1).contiguous()
-        enc_out, n_vars = self.patch_embedding(x_enc.to(torch.bfloat16))
+        
+        # --- FIX: Xóa .to(torch.bfloat16) để tránh lỗi xung đột type ---
+        enc_out, n_vars = self.patch_embedding(x_enc) 
+        # -------------------------------------------------------------
+        
         enc_out = self.reprogramming_layer(enc_out, source_embeddings, source_embeddings)
         llama_enc_out = torch.cat([prompt_embeddings, enc_out], dim=1)
         dec_out = self.llm_model(inputs_embeds=llama_enc_out).last_hidden_state

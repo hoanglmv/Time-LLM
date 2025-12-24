@@ -1,0 +1,96 @@
+python run/run_main.py --task_name long_term_forecast --is_training 1 --root_path ./dataset/network/ --data_path enodebA_enodebA1.csv --model_id NodeA1_DLinear --model DLinear --data NetworksKPI --features M --seq_len 96 --label_len 48 --pred_len 96 --enc_in 5 --dec_in 5 --c_out 5 --target ps_traffic_mb --batch_size 256 --learning_rate 0.001 --train_epochs 100 --model_comment "DLinear_Run"
+
+
+
+python run/run_main.py --task_name long_term_forecast --is_training 1 --root_path ./dataset/network/ --data_path enodebA_enodebA1.csv --model_id NodeA1_Autoformer --model Autoformer --data NetworksKPI --features M --seq_len 96 --label_len 48 --pred_len 96 --enc_in 5 --dec_in 5 --c_out 5 --target ps_traffic_mb --e_layers 2 --d_layers 1 --d_model 256 --d_ff 512 --n_heads 8 --batch_size 128 --learning_rate 0.0001 --train_epochs 10 --model_comment "Autoformer_Run"
+
+
+
+python run/run_main.py --task_name long_term_forecast --is_training 1 --root_path ./dataset/network/ --data_path enodebA_enodebA1.csv --model_id NodeA1_TimeLLM_Llama --model TimeLLM --data NetworksKPI --features M --seq_len 96 --label_len 48 --pred_len 96 --enc_in 5 --dec_in 5 --c_out 5 --target ps_traffic_mb --llm_model LLAMA --llm_model_id huggyllama/llama-7b --llm_dim 4096 --llm_layers 6 --batch_size 128 --learning_rate 0.001 --train_epochs 10 --model_comment "TimeLLM_Llama7B"
+
+
+
+
+nohup bash -c "
+conda activate py312 && \
+
+python run/run_main.py \
+--task_name long_term_forecast \
+--is_training 1 \
+--root_path ./dataset/network/ \
+--data_path enodebA_enodebA1.csv \
+--model_id NodeA1_DLinear \
+--model DLinear \
+--data NetworksKPI \
+--features M \
+--seq_len 96 \
+--label_len 48 \
+--pred_len 96 \
+--enc_in 5 \
+--dec_in 5 \
+--c_out 5 \
+--target ps_traffic_mb \
+--batch_size 256 \
+--learning_rate 0.001 \
+--train_epochs 100 \
+--model_comment DLinear_Run \
+> dlinear.log 2>&1 && \
+
+python run/run_main.py \
+--task_name long_term_forecast \
+--is_training 1 \
+--root_path ./dataset/network/ \
+--data_path enodebA_enodebA1.csv \
+--model_id NodeA1_Autoformer \
+--model Autoformer \
+--data NetworksKPI \
+--features M \
+--seq_len 96 \
+--label_len 48 \
+--pred_len 96 \
+--enc_in 5 \
+--dec_in 5 \
+--c_out 5 \
+--target ps_traffic_mb \
+--e_layers 2 \
+--d_layers 1 \
+--d_model 256 \
+--d_ff 512 \
+--n_heads 8 \
+--batch_size 128 \
+--learning_rate 0.0001 \
+--train_epochs 10 \
+--model_comment Autoformer_Run \
+> autoformer.log 2>&1 && \
+
+python run/run_main.py \
+--task_name long_term_forecast \
+--is_training 1 \
+--root_path ./dataset/network/ \
+--data_path enodebA_enodebA1.csv \
+--model_id NodeA1_TimeLLM_Llama \
+--model TimeLLM \
+--data NetworksKPI \
+--features M \
+--seq_len 96 \
+--label_len 48 \
+--pred_len 96 \
+--enc_in 5 \
+--dec_in 5 \
+--c_out 5 \
+--target ps_traffic_mb \
+--llm_model LLAMA \
+--llm_model_id huggyllama/llama-7b \
+--llm_dim 4096 \
+--llm_layers 6 \
+--batch_size 128 \
+--learning_rate 0.001 \
+--train_epochs 10 \
+--model_comment TimeLLM_Llama7B \
+> timellm.log 2>&1
+" &
+
+
+tail -f dlinear.log
+tail -f autoformer.log
+tail -f timellm.log
