@@ -1,7 +1,0 @@
-nohup: ignoring input
-
-CondaError: Run 'conda init' before 'conda activate'
-
-✅ TimeLLM Done. 🚀 [2/3] STARTING Autoformer...
-✅ Autoformer Done. 🚀 [3/3] STARTING DLinear...
-🎉 ALL JOBS FINISHED!
