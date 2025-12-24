@@ -1,0 +1,172 @@
+
+========================================
+🚀 Đang chạy trên GPU: Quadro RTX 8000
+📦 VRAM khả dụng: 50.75 GB
+========================================
+
+📊 Dataset_Custom Numeric Columns: ['avg_rrc_connected_user', 'prb_dl_used', 'prb_dl_available_total', 'prb_utilization', 'ps_traffic_mb']
+🔢 Shape: (10873, 5)
+📊 Dataset_Custom Numeric Columns: ['avg_rrc_connected_user', 'prb_dl_used', 'prb_dl_available_total', 'prb_utilization', 'ps_traffic_mb']
+🔢 Shape: (10873, 5)
+📊 Dataset_Custom Numeric Columns: ['avg_rrc_connected_user', 'prb_dl_used', 'prb_dl_available_total', 'prb_utilization', 'ps_traffic_mb']
+🔢 Shape: (10873, 5)
+>>>>>>> Start Training <<<<<<<
+0it [00:00, ?it/s]1it [00:00,  1.71it/s]13it [00:00, 24.82it/s]25it [00:00, 45.28it/s]28it [00:00, 32.85it/s]
+Epoch: 1 cost time: 0.85s
+Epoch: 1 | Train Loss: 0.901568 | Vali Loss: 7.285876 | Test Loss: 0.806724
+Updating learning rate to 0.001
+0it [00:00, ?it/s]1it [00:00,  2.96it/s]13it [00:00, 37.62it/s]26it [00:00, 63.66it/s]28it [00:00, 45.04it/s]
+Epoch: 2 cost time: 0.62s
+Epoch: 2 | Train Loss: 0.794718 | Vali Loss: 7.417418 | Test Loss: 0.548539
+EarlyStopping counter: 1 out of 10
+Updating learning rate to 0.0005
+0it [00:00, ?it/s]1it [00:00,  2.96it/s]12it [00:00, 34.31it/s]25it [00:00, 61.08it/s]28it [00:00, 45.23it/s]
+Epoch: 3 cost time: 0.62s
+Epoch: 3 | Train Loss: 0.724703 | Vali Loss: 6.464653 | Test Loss: 0.531076
+Updating learning rate to 0.00025
+0it [00:00, ?it/s]1it [00:00,  2.93it/s]12it [00:00, 34.41it/s]23it [00:00, 55.69it/s]28it [00:00, 43.65it/s]
+Epoch: 4 cost time: 0.64s
+Epoch: 4 | Train Loss: 0.713738 | Vali Loss: 6.689314 | Test Loss: 0.533032
+EarlyStopping counter: 1 out of 10
+Updating learning rate to 0.000125
+0it [00:00, ?it/s]1it [00:00,  2.62it/s]13it [00:00, 34.51it/s]24it [00:00, 55.48it/s]28it [00:00, 41.84it/s]
+Epoch: 5 cost time: 0.67s
+Epoch: 5 | Train Loss: 0.708951 | Vali Loss: 6.499446 | Test Loss: 0.533416
+EarlyStopping counter: 2 out of 10
+Updating learning rate to 6.25e-05
+0it [00:00, ?it/s]1it [00:00,  3.06it/s]13it [00:00, 38.52it/s]25it [00:00, 61.97it/s]28it [00:00, 46.34it/s]
+Epoch: 6 cost time: 0.60s
+Epoch: 6 | Train Loss: 0.707999 | Vali Loss: 6.603161 | Test Loss: 0.533444
+EarlyStopping counter: 3 out of 10
+Updating learning rate to 3.125e-05
+0it [00:00, ?it/s]1it [00:00,  2.76it/s]14it [00:00, 38.13it/s]25it [00:00, 58.40it/s]28it [00:00, 43.22it/s]
+Epoch: 7 cost time: 0.65s
+Epoch: 7 | Train Loss: 0.703421 | Vali Loss: 6.550780 | Test Loss: 0.533164
+EarlyStopping counter: 4 out of 10
+Updating learning rate to 1.5625e-05
+0it [00:00, ?it/s]1it [00:00,  3.08it/s]12it [00:00, 35.65it/s]23it [00:00, 57.73it/s]28it [00:00, 45.23it/s]
+Epoch: 8 cost time: 0.62s
+Epoch: 8 | Train Loss: 0.707765 | Vali Loss: 6.576516 | Test Loss: 0.533053
+EarlyStopping counter: 5 out of 10
+Updating learning rate to 7.8125e-06
+0it [00:00, ?it/s]1it [00:00,  2.67it/s]12it [00:00, 32.19it/s]23it [00:00, 54.08it/s]28it [00:00, 41.62it/s]
+Epoch: 9 cost time: 0.67s
+Epoch: 9 | Train Loss: 0.701813 | Vali Loss: 6.482327 | Test Loss: 0.532937
+EarlyStopping counter: 6 out of 10
+Updating learning rate to 3.90625e-06
+0it [00:00, ?it/s]1it [00:00,  3.05it/s]15it [00:00, 44.04it/s]27it [00:00, 66.80it/s]28it [00:00, 47.19it/s]
+Epoch: 10 cost time: 0.59s
+Epoch: 10 | Train Loss: 0.705049 | Vali Loss: 6.614665 | Test Loss: 0.532917
+EarlyStopping counter: 7 out of 10
+Updating learning rate to 1.953125e-06
+0it [00:00, ?it/s]1it [00:00,  2.85it/s]13it [00:00, 36.38it/s]25it [00:00, 60.55it/s]28it [00:00, 44.04it/s]
+Epoch: 11 cost time: 0.64s
+Epoch: 11 | Train Loss: 0.707765 | Vali Loss: 6.454768 | Test Loss: 0.532910
+Updating learning rate to 9.765625e-07
+0it [00:00, ?it/s]1it [00:00,  3.06it/s]13it [00:00, 38.32it/s]26it [00:00, 64.12it/s]28it [00:00, 46.67it/s]
+Epoch: 12 cost time: 0.60s
+Epoch: 12 | Train Loss: 0.699568 | Vali Loss: 6.491771 | Test Loss: 0.532902
+EarlyStopping counter: 1 out of 10
+Updating learning rate to 4.8828125e-07
+0it [00:00, ?it/s]1it [00:00,  3.22it/s]14it [00:00, 42.37it/s]26it [00:00, 65.19it/s]28it [00:00, 48.28it/s]
+Epoch: 13 cost time: 0.58s
+Epoch: 13 | Train Loss: 0.701971 | Vali Loss: 6.540452 | Test Loss: 0.532896
+EarlyStopping counter: 2 out of 10
+Updating learning rate to 2.44140625e-07
+0it [00:00, ?it/s]1it [00:00,  3.07it/s]13it [00:00, 38.49it/s]25it [00:00, 62.11it/s]28it [00:00, 46.20it/s]
+Epoch: 14 cost time: 0.61s
+Epoch: 14 | Train Loss: 0.700087 | Vali Loss: 6.670880 | Test Loss: 0.532894
+EarlyStopping counter: 3 out of 10
+Updating learning rate to 1.220703125e-07
+0it [00:00, ?it/s]1it [00:00,  2.94it/s]14it [00:00, 39.99it/s]26it [00:00, 63.06it/s]28it [00:00, 45.98it/s]
+Epoch: 15 cost time: 0.61s
+Epoch: 15 | Train Loss: 0.704088 | Vali Loss: 6.470841 | Test Loss: 0.532893
+EarlyStopping counter: 4 out of 10
+Updating learning rate to 6.103515625e-08
+0it [00:00, ?it/s]1it [00:00,  3.04it/s]14it [00:00, 41.42it/s]26it [00:00, 65.01it/s]28it [00:00, 47.24it/s]
+Epoch: 16 cost time: 0.59s
+Epoch: 16 | Train Loss: 0.700903 | Vali Loss: 6.506234 | Test Loss: 0.532893
+EarlyStopping counter: 5 out of 10
+Updating learning rate to 3.0517578125e-08
+0it [00:00, ?it/s]1it [00:00,  3.19it/s]12it [00:00, 36.03it/s]25it [00:00, 63.29it/s]28it [00:00, 47.03it/s]
+Epoch: 17 cost time: 0.60s
+Epoch: 17 | Train Loss: 0.701368 | Vali Loss: 6.499663 | Test Loss: 0.532892
+EarlyStopping counter: 6 out of 10
+Updating learning rate to 1.52587890625e-08
+0it [00:00, ?it/s]1it [00:00,  3.04it/s]14it [00:00, 40.90it/s]26it [00:00, 63.97it/s]28it [00:00, 46.65it/s]
+Epoch: 18 cost time: 0.60s
+Epoch: 18 | Train Loss: 0.694476 | Vali Loss: 6.441130 | Test Loss: 0.532892
+Updating learning rate to 7.62939453125e-09
+0it [00:00, ?it/s]1it [00:00,  3.06it/s]15it [00:00, 43.91it/s]26it [00:00, 63.46it/s]28it [00:00, 46.66it/s]
+Epoch: 19 cost time: 0.60s
+Epoch: 19 | Train Loss: 0.706503 | Vali Loss: 6.690717 | Test Loss: 0.532892
+EarlyStopping counter: 1 out of 10
+Updating learning rate to 3.814697265625e-09
+0it [00:00, ?it/s]1it [00:00,  3.16it/s]14it [00:00, 42.55it/s]27it [00:00, 67.70it/s]28it [00:00, 48.52it/s]
+Epoch: 20 cost time: 0.58s
+Epoch: 20 | Train Loss: 0.700812 | Vali Loss: 6.483488 | Test Loss: 0.532892
+EarlyStopping counter: 2 out of 10
+Updating learning rate to 1.9073486328125e-09
+0it [00:00, ?it/s]1it [00:00,  3.12it/s]14it [00:00, 41.52it/s]26it [00:00, 64.64it/s]28it [00:00, 46.90it/s]
+Epoch: 21 cost time: 0.60s
+Epoch: 21 | Train Loss: 0.700709 | Vali Loss: 6.392236 | Test Loss: 0.532892
+Updating learning rate to 9.5367431640625e-10
+0it [00:00, ?it/s]1it [00:00,  3.15it/s]14it [00:00, 41.94it/s]26it [00:00, 65.49it/s]28it [00:00, 47.42it/s]
+Epoch: 22 cost time: 0.59s
+Epoch: 22 | Train Loss: 0.704660 | Vali Loss: 6.592457 | Test Loss: 0.532892
+EarlyStopping counter: 1 out of 10
+Updating learning rate to 4.76837158203125e-10
+0it [00:00, ?it/s]1it [00:00,  2.52it/s]14it [00:00, 36.12it/s]26it [00:00, 57.96it/s]28it [00:00, 41.39it/s]
+Epoch: 23 cost time: 0.68s
+Epoch: 23 | Train Loss: 0.697792 | Vali Loss: 6.495907 | Test Loss: 0.532892
+EarlyStopping counter: 2 out of 10
+Updating learning rate to 2.384185791015625e-10
+0it [00:00, ?it/s]1it [00:00,  3.07it/s]14it [00:00, 41.49it/s]26it [00:00, 63.98it/s]28it [00:00, 47.04it/s]
+Epoch: 24 cost time: 0.60s
+Epoch: 24 | Train Loss: 0.707707 | Vali Loss: 6.531526 | Test Loss: 0.532892
+EarlyStopping counter: 3 out of 10
+Updating learning rate to 1.1920928955078125e-10
+0it [00:00, ?it/s]1it [00:00,  3.08it/s]14it [00:00, 40.51it/s]26it [00:00, 63.32it/s]28it [00:00, 45.52it/s]
+Epoch: 25 cost time: 0.62s
+Epoch: 25 | Train Loss: 0.703690 | Vali Loss: 6.585361 | Test Loss: 0.532892
+EarlyStopping counter: 4 out of 10
+Updating learning rate to 5.960464477539063e-11
+0it [00:00, ?it/s]1it [00:00,  3.07it/s]14it [00:00, 41.10it/s]25it [00:00, 61.57it/s]28it [00:00, 46.37it/s]
+Epoch: 26 cost time: 0.60s
+Epoch: 26 | Train Loss: 0.712495 | Vali Loss: 6.505650 | Test Loss: 0.532892
+EarlyStopping counter: 5 out of 10
+Updating learning rate to 2.980232238769531e-11
+0it [00:00, ?it/s]1it [00:00,  3.05it/s]14it [00:00, 41.44it/s]26it [00:00, 63.83it/s]28it [00:00, 46.64it/s]
+Epoch: 27 cost time: 0.60s
+Epoch: 27 | Train Loss: 0.704781 | Vali Loss: 6.578432 | Test Loss: 0.532892
+EarlyStopping counter: 6 out of 10
+Updating learning rate to 1.4901161193847657e-11
+0it [00:00, ?it/s]1it [00:00,  3.05it/s]14it [00:00, 41.42it/s]26it [00:00, 64.08it/s]28it [00:00, 46.14it/s]
+Epoch: 28 cost time: 0.61s
+Epoch: 28 | Train Loss: 0.696605 | Vali Loss: 6.499809 | Test Loss: 0.532892
+EarlyStopping counter: 7 out of 10
+Updating learning rate to 7.450580596923828e-12
+0it [00:00, ?it/s]1it [00:00,  3.07it/s]14it [00:00, 40.99it/s]26it [00:00, 64.39it/s]28it [00:00, 46.15it/s]
+Epoch: 29 cost time: 0.61s
+Epoch: 29 | Train Loss: 0.709590 | Vali Loss: 6.497148 | Test Loss: 0.532892
+EarlyStopping counter: 8 out of 10
+Updating learning rate to 3.725290298461914e-12
+0it [00:00, ?it/s]1it [00:00,  3.06it/s]13it [00:00, 38.55it/s]25it [00:00, 62.73it/s]28it [00:00, 46.09it/s]
+Epoch: 30 cost time: 0.61s
+Epoch: 30 | Train Loss: 0.706247 | Vali Loss: 6.540581 | Test Loss: 0.532892
+EarlyStopping counter: 9 out of 10
+Updating learning rate to 1.862645149230957e-12
+0it [00:00, ?it/s]1it [00:00,  3.10it/s]14it [00:00, 41.67it/s]26it [00:00, 64.26it/s]28it [00:00, 46.66it/s]
+Epoch: 31 cost time: 0.60s
+Epoch: 31 | Train Loss: 0.704660 | Vali Loss: 6.553065 | Test Loss: 0.532892
+EarlyStopping counter: 10 out of 10
+Early stopping
+>>>>>>> Training Finished <<<<<<<
+✅ Đã lưu file lịch sử Loss tại: ./checkpoints/long_term_forecast_NodeA1_DLinear_DLinear_NetworksKPI_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_fc1_ebtimeF_test_0-DLinear_Run/loss_history.csv
+✅ Đã lưu biểu đồ loss tại: figures/long_term_forecast_NodeA1_DLinear_DLinear_NetworksKPI_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_fc1_ebtimeF_test_0-DLinear_Run_loss.png
+>>>>>>> Loading Best Model for Testing <<<<<<<
+>>>>>>> Start Final Evaluation <<<<<<<
+🎉 Final Test Results -> Loss(MSE): 0.532892 | MAE: 0.453725
+✅ Kết quả dự đoán (pred.npy, true.npy) đã lưu tại: ./results/long_term_forecast_NodeA1_DLinear_DLinear_NetworksKPI_ftM_sl96_ll48_pl96_dm16_nh8_el2_dl1_df32_fc1_ebtimeF_test_0-DLinear_Run/
+[W1224 17:08:29.439869649 AllocatorConfig.cpp:28] Warning: PYTORCH_CUDA_ALLOC_CONF is deprecated, use PYTORCH_ALLOC_CONF instead (function operator())
+ (function operator())

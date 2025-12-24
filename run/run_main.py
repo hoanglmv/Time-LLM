@@ -29,7 +29,7 @@ from tqdm import tqdm
 import time
 import random
 import numpy as np
-import pandas as pd # <--- ĐÃ THÊM THƯ VIỆN PANDAS
+import pandas as pd 
 
 from models import Autoformer, DLinear, TimeLLM
 from prepare_data.data_provider.data_factory import data_provider
@@ -54,7 +54,7 @@ parser.add_argument('--is_training', type=int, required=True, default=1, help='s
 parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
 parser.add_argument('--model_comment', type=str, required=True, default='none', help='prefix when saving test results')
 parser.add_argument('--model', type=str, required=True, default='Autoformer',
-                    help='model name, options: [Autoformer, DLinear]')
+                    help='model name, options: [Autoformer, DLinear, TimeLLM]')
 parser.add_argument('--seed', type=int, default=2021, help='random seed')
 
 # data loader
@@ -96,7 +96,14 @@ parser.add_argument('--stride', type=int, default=8, help='stride')
 parser.add_argument('--prompt_domain', type=int, default=0, help='')
 parser.add_argument('--llm_model', type=str, default='LLAMA', help='LLM model')
 parser.add_argument('--llm_model_id', type=str, default='gpt2', help='LLM model id')
-parser.add_argument('--llm_dim', type=str, default='4096', help='LLM model dimension')
+
+# --- SỬA LỖI QUAN TRỌNG: Đổi type từ str sang int ---
+parser.add_argument('--llm_dim', type=int, default=4096, help='LLM model dimension') 
+# ---------------------------------------------------
+
+# --- THÊM TÍNH NĂNG: Cho phép nhập prompt trực tiếp ---
+parser.add_argument('--content', type=str, default=None, help='Input prompt description directly')
+# -----------------------------------------------------
 
 # optimization
 parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
@@ -119,7 +126,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
 
-    # Khởi tạo Accelerator (Bỏ qua DeepSpeed để tránh lỗi Windows)
+    # Khởi tạo Accelerator
     accelerator = Accelerator(kwargs_handlers=[ddp_kwargs])
 
     # --- IN THÔNG TIN THIẾT BỊ ---
@@ -154,7 +161,18 @@ if __name__ == '__main__':
             model = TimeLLM.Model(args).float()
 
         path = os.path.join(args.checkpoints, setting + '-' + args.model_comment)
-        args.content = load_content(args)
+        
+        # --- CẬP NHẬT LOGIC LOAD PROMPT ---
+        # Ưu tiên lấy từ tham số --content, nếu không có mới đọc file txt
+        if args.content:
+            print(f"✅ Using custom prompt provided in arguments.")
+        else:
+            # Chỉ cố gắng load từ file nếu model là TimeLLM để tránh lỗi cho các model khác
+            if args.model == 'TimeLLM':
+                args.content = load_content(args)
+            else:
+                args.content = "Time Series Forecasting"
+        # ----------------------------------
 
         if not os.path.exists(path) and accelerator.is_local_main_process:
             os.makedirs(path)

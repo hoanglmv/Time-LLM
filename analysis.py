@@ -6,7 +6,7 @@ import os
 # 1. CẤU HÌNH ĐƯỜNG DẪN (Bạn copy đường dẫn folder kết quả vào đây)
 # ==========================================
 # Ví dụ: './results/long_term_forecast_ECL_...'
-folder_path = './results/long_term_forecast_ECL_512_96_DLinear_DLinear_ECL_ftM_sl512_ll48_pl96_dm16_nh8_el2_dl1_df32_fc1_ebtimeF_Exp_DLinear_Electricity_0-DLinear_ECL'
+folder_path = './results/long_term_forecast_NodeA1_DLinear_DLinear_NetworksKPI_ftM_sl672_ll96_pl672_dm16_nh8_el2_dl1_df32_fc1_ebtimeF_test_0-DLinear_Run'
 
 # ==========================================
 # 2. LOAD DỮ LIỆU
