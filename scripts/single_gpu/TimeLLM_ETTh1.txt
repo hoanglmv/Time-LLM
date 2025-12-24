@@ -18,87 +18,67 @@ python run/run_main.py \
   --itr 1 \
   --d_model 32 \
   --d_ff 128 \
-  --batch_size 24 \
+  --batch_size 1 \
   --learning_rate 0.01 \
+  --llm_model LLAMA \
+  --llm_model_id huggyllama/llama-7b \
+  --llm_dim 4096 \
   --llm_layers 32 \
   --train_epochs 100 \
-  --model_comment 'TimeLLM-ETTh1'
+  --patience 10 \
+  --model_comment 'TimeLLM-ETTh1-96'
 
-python run/run_main.py \
+
+  python run/run_main.py \
   --task_name long_term_forecast \
   --is_training 1 \
   --root_path ./dataset/ETT-small/ \
   --data_path ETTh1.csv \
-  --model_id ETTh1_512_192 \
-  --model TimeLLM \
+  --model_id ETTh1_512_96 \
+  --model Autoformer \
   --data ETTh1 \
   --features M \
   --seq_len 512 \
   --label_len 48 \
-  --pred_len 192 \
+  --pred_len 96 \
   --factor 3 \
   --enc_in 7 \
   --dec_in 7 \
   --c_out 7 \
   --des 'Exp' \
   --itr 1 \
-  --d_model 32 \
-  --d_ff 128 \
-  --batch_size 24 \
-  --learning_rate 0.02 \
-  --llm_layers 32 \
+  --d_model 512 \
+  --d_ff 2048 \
+  --n_heads 8 \
+  --e_layers 2 \
+  --d_layers 1 \
+  --batch_size 32 \
+  --learning_rate 0.0001 \
   --train_epochs 100 \
-  --model_comment 'TimeLLM-ETTh1'
+  --patience 10 \
+  --model_comment 'Autoformer-ETTh1-96'
 
-python run/run_main.py \
+
+
+  python run/run_main.py \
   --task_name long_term_forecast \
   --is_training 1 \
   --root_path ./dataset/ETT-small/ \
   --data_path ETTh1.csv \
-  --model_id ETTh1_512_336 \
-  --model TimeLLM \
+  --model_id ETTh1_512_96 \
+  --model DLinear \
   --data ETTh1 \
   --features M \
   --seq_len 512 \
   --label_len 48 \
-  --pred_len 336 \
-  --factor 3 \
+  --pred_len 96 \
   --enc_in 7 \
   --dec_in 7 \
   --c_out 7 \
   --des 'Exp' \
   --itr 1 \
-  --d_model 32 \
-  --d_ff 128 \
-  --batch_size 24 \
-  --lradj 'COS' \
+  --batch_size 128 \
   --learning_rate 0.001 \
-  --llm_layers 32 \
   --train_epochs 100 \
-  --model_comment 'TimeLLM-ETTh1'
-
-python run/run_main.py \
-  --task_name long_term_forecast \
-  --is_training 1 \
-  --root_path ./dataset/ETT-small/ \
-  --data_path ETTh1.csv \
-  --model_id ETTh1_512_720 \
-  --model TimeLLM \
-  --data ETTh1 \
-  --features M \
-  --seq_len 512 \
-  --label_len 48 \
-  --pred_len 720 \
-  --factor 3 \
-  --enc_in 7 \
-  --dec_in 7 \
-  --c_out 7 \
-  --des 'Exp' \
-  --itr 1 \
-  --d_model 32 \
-  --d_ff 128 \
-  --batch_size 24 \
-  --learning_rate 0.01 \
-  --llm_layers 32 \
-  --train_epochs 100 \
-  --model_comment 'TimeLLM-ETTh1'
+  --patience 10 \
+  --model_comment 'DLinear-ETTh1-96'

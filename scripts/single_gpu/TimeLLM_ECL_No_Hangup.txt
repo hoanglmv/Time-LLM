@@ -1,0 +1,78 @@
+nohup bash -c "source ~/.bashrc && conda activate py312 && \
+echo '🚀 [1/3] STARTING TimeLLM (ECL) - Heavy model first...' && \
+python run/run_main.py \
+  --task_name long_term_forecast \
+  --is_training 1 \
+  --root_path ./dataset/electricity/ \
+  --data_path electricity.csv \
+  --model_id ECL_512_96_TimeLLM \
+  --model TimeLLM \
+  --data ECL \
+  --features M \
+  --seq_len 512 \
+  --label_len 48 \
+  --pred_len 96 \
+  --enc_in 321 \
+  --dec_in 321 \
+  --c_out 321 \
+  --llm_model LLAMA \
+  --llm_model_id huggyllama/llama-7b \
+  --llm_dim 4096 \
+  --llm_layers 6 \
+  --batch_size 4 \
+  --learning_rate 0.001 \
+  --train_epochs 10 \
+  --des 'Exp_TimeLLM_Electricity' \
+  --model_comment TimeLLM_Llama7B_ECL \
+  > timellm_ecl.log 2>&1; \
+echo '✅ TimeLLM Done. 🚀 [2/3] STARTING DLinear (ECL)...' && \
+python run/run_main.py \
+  --task_name long_term_forecast \
+  --is_training 1 \
+  --root_path ./dataset/electricity/ \
+  --data_path electricity.csv \
+  --model_id ECL_512_96_DLinear \
+  --model DLinear \
+  --data ECL \
+  --features M \
+  --seq_len 512 \
+  --label_len 48 \
+  --pred_len 96 \
+  --enc_in 321 \
+  --dec_in 321 \
+  --c_out 321 \
+  --batch_size 128 \
+  --learning_rate 0.001 \
+  --train_epochs 10 \
+  --des 'Exp_DLinear_Electricity' \
+  --model_comment DLinear_ECL \
+  > dlinear_ecl.log 2>&1; \
+echo '✅ DLinear Done. 🚀 [3/3] STARTING Autoformer (ECL)...' && \
+python run/run_main.py \
+  --task_name long_term_forecast \
+  --is_training 1 \
+  --root_path ./dataset/electricity/ \
+  --data_path electricity.csv \
+  --model_id ECL_512_96_Autoformer \
+  --model Autoformer \
+  --data ECL \
+  --features M \
+  --seq_len 512 \
+  --label_len 48 \
+  --pred_len 96 \
+  --e_layers 2 \
+  --d_layers 1 \
+  --factor 3 \
+  --enc_in 321 \
+  --dec_in 321 \
+  --c_out 321 \
+  --d_model 512 \
+  --d_ff 2048 \
+  --n_heads 8 \
+  --batch_size 16 \
+  --learning_rate 0.0001 \
+  --train_epochs 10 \
+  --des 'Exp_Autoformer_Electricity' \
+  --model_comment Autoformer_ECL \
+  > autoformer_ecl.log 2>&1; \
+echo '🎉 ALL JOBS FINISHED!'" > master_ecl.log 2>&1 &
