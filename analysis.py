@@ -6,7 +6,7 @@ import os
 # 1. CẤU HÌNH ĐƯỜNG DẪN (Bạn copy đường dẫn folder kết quả vào đây)
 # ==========================================
 # Ví dụ: './results/long_term_forecast_ECL_...'
-folder_path = './results/long_term_forecast_ECL_512_96_DLinear_DLinear_ECL_ftM_sl512_ll48_pl96_dm16_nh8_el2_dl1_df32_fc1_ebtimeF_Exp_DLinear_Electricity_0-DLinear_ECL'
+folder_path = '/home/myvh/hoanglmv/Time-LLM/results/long_term_forecast_ECL_512_96_Autoformer_Autoformer_ECL_ftM_sl512_ll48_pl96_dm512_nh8_el2_dl1_df2048_fc3_ebtimeF_Exp_Autoformer_Electricity_0-Autoformer_ECL'
 
 # ==========================================
 # 2. LOAD DỮ LIỆU
@@ -31,7 +31,7 @@ print(f"📦 Shape của thực tế: {trues.shape}")
 # ==========================================
 # Chọn mẫu ngẫu nhiên để vẽ
 sample_idx = 0  # Chọn mẫu đầu tiên trong tập test
-feature_idx = 2 # Chọn đặc trưng cuối cùng (thường là target chính - OT)
+feature_idx = -4 # Chọn đặc trưng cuối cùng (thường là target chính - OT)
 
 # Lấy chuỗi dữ liệu (96 điểm dự đoán)
 pred_series = preds[sample_idx, :, feature_idx]
